@@ -8,6 +8,7 @@ from tabs.tab2_geographic_analysis import show_geographic_analysis_tab
 from tabs.tab3_satisfaction_levels import show_satisfaction_levels_tab
 from tabs.tab4_income_housing_costs import show_income_housing_costs_tab
 from tabs.tab5_education_employment import show_education_employment_tab
+from tabs.tab6_housing_types_sizes import show_housing_types_sizes_tab
 
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Dashboard do Habitação Transparente")
@@ -194,3 +195,6 @@ with tab4:
     
 with tab5:
     show_education_employment_tab(df)
+
+with tab6:
+    show_housing_types_sizes_tab(df)
