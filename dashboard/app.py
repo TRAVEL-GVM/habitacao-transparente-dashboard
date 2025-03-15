@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import streamlit as st
+from tabs.tab0_general_overview import show_visao_geral_tab
 from tabs.tab1_housing_distribution import show_housing_distribution_tab
 from tabs.tab2_geographic_analysis import show_geographic_analysis_tab
 from tabs.tab3_satisfaction_levels import show_satisfaction_levels_tab
@@ -211,7 +212,8 @@ geographic distribution, satisfaction levels, and financial aspects.
 """)
 
 # Create tabs for different insights
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "General Overview",
     "Housing Distribution", 
     "Geographic Analysis", 
     "Satisfaction Levels", 
@@ -219,6 +221,9 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Education & Employment",
     "Housing Types & Sizes"
 ])
+
+with tab0:
+    show_visao_geral_tab(df)
 
 with tab1:
     show_housing_distribution_tab(df)

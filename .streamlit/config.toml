@@ -1,0 +1,4 @@
+[theme]
+primaryColor="#2e7d32"        # Dark green from PRIMARY_COLORS[0]
+backgroundColor="#ffffff"      # White from BACKGROUND_COLORS[3]
+secondaryBackgroundColor="#e8f5e9"  # Light green from BACKGROUND_COLORS[0]
