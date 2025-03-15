@@ -33,6 +33,205 @@ def show_satisfaction_levels_tab(df):
     Housing satisfaction is a critical metric that reflects the quality of life and housing adequacy.
     The analysis examines various factors influencing satisfaction levels, helping to identify areas for improvement.
     """)
+    
+    # Define better income bracket ordering and visualization
+    income_order = [
+        'sem-rendimento', 
+        '<7001', 
+        '7001-12000', 
+        '12001-20000', 
+        '20001-35000', 
+        '35001-50000', 
+        '50001-80000', 
+        '>80001'
+    ]
+
+    # More human-readable income labels for display
+    income_labels = {
+        'sem-rendimento': 'No Income', 
+        '<7001': 'Up to €7,000',
+        '7001-12000': '€7,001-€12,000',
+        '12001-20000': '€12,001-€20,000',
+        '20001-35000': '€20,001-€35,000',
+        '35001-50000': '€35,001-€50,000',
+        '50001-80000': '€50,001-€80,000',
+        '>80001': 'Over €80,000'
+    }
+
+    # Create a categorical variable for income with proper ordering
+    df['income_category'] = pd.Categorical(
+        df['rendimento-anual'].fillna('Unknown'),
+        categories=income_order + ['Unknown'],
+        ordered=True
+    )
+
+    # Interactive filter by satisfaction level
+    st.subheader("Explore Demographics by Satisfaction Level")
+    st.markdown("""
+    This section allows you to explore how satisfaction levels vary across different income groups.
+    Use the filters below to focus on specific satisfaction levels and income brackets to uncover patterns.
+    """)
+
+    # Two-column layout for filters
+    col1, col2 = st.columns(2)
+
+    with col1:
+        selected_satisfaction = st.multiselect(
+            "Select Satisfaction Levels",
+            options=df["satisfaction_level"].dropna().unique(),
+            default=df["satisfaction_level"].dropna().unique(),
+        )
+
+    with col2:
+        selected_income = st.multiselect(
+            "Select Income Brackets",
+            options=[income_labels[inc] for inc in income_order if inc in df['rendimento-anual'].unique()],
+            default=[income_labels[inc] for inc in income_order if inc in df['rendimento-anual'].unique()],
+            format_func=lambda x: x
+        )
+
+        # Convert back to original format for filtering
+        selected_income_original = [key for key, value in income_labels.items() if value in selected_income]
+
+    # Apply filters
+    if selected_satisfaction and selected_income_original:
+        filtered_df = df[(df["satisfaction_level"].isin(selected_satisfaction)) & 
+                        (df["rendimento-anual"].isin(selected_income_original))]
+    elif selected_satisfaction:
+        filtered_df = df[df["satisfaction_level"].isin(selected_satisfaction)]
+    elif selected_income_original:
+        filtered_df = df[df["rendimento-anual"].isin(selected_income_original)]
+    else:
+        filtered_df = df
+
+    # Income vs. Satisfaction Analysis
+    st.subheader("Income vs. Satisfaction Analysis")
+
+    # Create tabs for different visualizations
+    income_tab1, income_tab2, income_tab3 = st.tabs(["Distribution", "Average Satisfaction", "Detailed Analysis"])
+
+    with income_tab1:
+        # Group by ordered income category for better visualization
+        income_satisfaction = filtered_df.groupby('income_category')['satisfaction_level'].value_counts(normalize=True).mul(100).round(1).unstack().fillna(0)
+        
+        # Replace category names with more readable versions for the chart
+        income_satisfaction.index = income_satisfaction.index.map(lambda x: income_labels.get(x, x))
+        
+        fig1 = px.bar(
+            income_satisfaction,
+            barmode="stack",
+            title="Satisfaction Distribution by Income Bracket (%)",
+            labels={"income_category": "Annual Income", "value": "Percentage"},
+            color_discrete_sequence=px.colors.qualitative.Set2,
+        )
+        fig1.update_layout(legend_title="Satisfaction Level", height=500)
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with income_tab2:
+        # Calculate average satisfaction score by income bracket (using categorical ordering)
+        filtered_df["satisfaction_score"] = filtered_df["satisfaction_level"].map(
+            satisfaction_scores
+        )
+        
+        # Group by income category to maintain proper order
+        avg_satisfaction = filtered_df.groupby("income_category")["satisfaction_score"].mean().reset_index()
+        avg_satisfaction.columns = ["Income Bracket", "Average Satisfaction Score"]
+        
+        # Replace with readable labels
+        avg_satisfaction["Income Bracket"] = avg_satisfaction["Income Bracket"].map(lambda x: income_labels.get(x, x))
+        
+        fig2 = px.bar(
+            avg_satisfaction,
+            x="Income Bracket", 
+            y="Average Satisfaction Score",
+            title="Average Satisfaction Score by Income Bracket",
+            color="Average Satisfaction Score",
+            color_continuous_scale=px.colors.sequential.Viridis,
+            text_auto='.2f'
+        )
+        fig2.update_layout(height=500)
+        st.plotly_chart(fig2, use_container_width=True)
+        
+        # Calculate correlation
+        corr = filtered_df["rendimento_numerical"].corr(filtered_df["satisfaction_score"])
+        
+        st.metric(
+            label="Income-Satisfaction Correlation", 
+            value=f"{corr:.2f}",
+            delta=f"{'Positive' if corr > 0 else 'Negative'} correlation",
+            delta_color="normal"
+        )
+
+    with income_tab3:
+        # Two columns for detailed analysis
+        col1, col2 = st.columns([3, 2])
+        
+        with col1:
+            # Create income groups for visualization
+            filtered_df['income_group'] = pd.cut(
+                filtered_df['rendimento_numerical'],
+                bins=[0, 7000, 12000, 20000, 35000, 50000, 80000, float('inf')],
+                labels=['No/Low Income', '€7K-€12K', '€12K-€20K', '€20K-€35K', '€35K-€50K', '€50K-€80K', 'Over €80K']
+            )
+            
+            # Handle NaN values in 'area_numerical' column
+            filtered_df['area_numerical'] = filtered_df['area_numerical'].fillna(0)
+
+            # Scatter plot with better grouping and labels
+            fig3 = px.scatter(
+                filtered_df,
+                x="rendimento_numerical",
+                y="satisfaction_score",
+                color="housing_situation",
+                size="area_numerical",
+                hover_data=["distrito", "concelho", "income_group"],
+                opacity=0.7,
+                title="Income vs. Satisfaction (Size = Living Area)",
+                labels={
+                    "rendimento_numerical": "Annual Income (€)",
+                    "satisfaction_score": "Satisfaction Score (1-5)"
+                }
+            )
+            
+            # Add income group reference lines
+            for income_level in [7000, 12000, 20000, 35000, 50000, 80000]:
+                fig3.add_vline(x=income_level, line_dash="dash", line_color="gray", opacity=0.5)
+                
+            fig3.update_layout(height=450)
+            st.plotly_chart(fig3, use_container_width=True)
+        
+        with col2:
+            # Key insights based on the data with improved income grouping
+            st.subheader("Key Insights")
+            
+            # Define income groups for analysis
+            income_groups = {
+                'Low Income': filtered_df[filtered_df["rendimento_numerical"] < 12000],
+                'Medium Income': filtered_df[(filtered_df["rendimento_numerical"] >= 12000) & (filtered_df["rendimento_numerical"] < 35000)],
+                'High Income': filtered_df[(filtered_df["rendimento_numerical"] >= 35000) & (filtered_df["rendimento_numerical"] < 80000)],
+                'Very High Income': filtered_df[filtered_df["rendimento_numerical"] >= 80000]
+            }
+            
+            # Calculate satisfaction by income group
+            income_group_satisfaction = {group: data["satisfaction_score"].mean() for group, data in income_groups.items() if not data.empty}
+            
+            # Calculate by ownership within income groups
+            ownership_by_income = {}
+            for group, data in income_groups.items():
+                if not data.empty:
+                    owned = data[data["housing_situation"] == "Owned"]["satisfaction_score"].mean()
+                    rented = data[data["housing_situation"] == "Renting"]["satisfaction_score"].mean()
+                    ownership_by_income[group] = (owned, rented)
+            
+            # Display metrics
+            st.markdown("**Satisfaction by Income Group:**")
+            for group, score in income_group_satisfaction.items():
+                st.metric(label=group, value=f"{score:.2f}/5")
+            
+            st.markdown("**Income-Ownership Interaction:**")
+            for group, (owned, rented) in ownership_by_income.items():
+                if not (pd.isna(owned) or pd.isna(rented)):
+                    st.markdown(f"**{group}**: Owned {owned:.2f} vs Rented {rented:.2f} (Diff: {owned-rented:.2f})")
 
     # Overview of satisfaction by housing situation
     st.subheader("Housing Satisfaction by Situation Type")
