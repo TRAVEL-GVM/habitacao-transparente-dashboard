@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,10 +10,9 @@ from tabs.tab4_income_housing_costs import show_income_housing_costs_tab
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Dashboard do Habitação Transparente")
 
-
 # Define function to load data
 @st.cache_data
-def load_data(file_path="data.csv"):
+def load_data(file_path):
     try:
         df = pd.read_csv(file_path)
     except Exception as e:
@@ -155,8 +155,11 @@ def load_data(file_path="data.csv"):
     
     return df
 
-# Load the data
-df = load_data("data.csv")
+# Set file path for data loading
+file_path = os.getcwd() + "/data.csv"
+
+# Load the data from root folder
+df = load_data(file_path)
 
 # Create dashboard title and introduction
 st.title("Dashboard do Habitação Transparente")
