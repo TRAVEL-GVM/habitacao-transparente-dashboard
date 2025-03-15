@@ -2,6 +2,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import sys
+from pathlib import Path
+
+# Add the parent directory to system path
+sys.path.append(str(Path(__file__).parent.parent))
+from config import *
 
 def show_education_employment_tab(df):
     """
@@ -59,9 +65,16 @@ def show_education_employment_tab(df):
             category_orders={
                 'education_level': ['Basic', 'High School', 'Vocational', "Bachelor's", "Master's", 'PhD']
             },
-            color_discrete_sequence=px.colors.qualitative.Set2
+            color_discrete_map=HOUSING_COLORS
         )
-        fig.update_layout(height=400, legend_title_text='Housing Situation')
+        fig.update_layout(
+            height=400,
+            legend_title_text='Housing Situation',
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("""
@@ -102,9 +115,16 @@ def show_education_employment_tab(df):
             category_orders={
                 'employment_status': ['Full-time', 'Part-time', 'Self-employed', 'Unemployed', 'Student', 'Retired']
             },
-            color_discrete_sequence=px.colors.qualitative.Set2
+            color_discrete_map=HOUSING_COLORS
         )
-        fig.update_layout(height=400, legend_title_text='Housing Situation')
+        fig.update_layout(
+            height=400,
+            legend_title_text='Housing Situation',
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("""
@@ -145,9 +165,16 @@ def show_education_employment_tab(df):
                 'rendimento_numerical': 'Average Annual Income (€)'
             },
             color='education_level',
-            color_discrete_sequence=px.colors.qualitative.Pastel
+            color_discrete_sequence=PRIMARY_COLORS
         )
-        fig.update_layout(height=400, showlegend=False)
+        fig.update_layout(
+            height=400,
+            showlegend=False,
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("""
@@ -189,9 +216,16 @@ def show_education_employment_tab(df):
                 'employment_status': ['Full-time', 'Part-time', 'Self-employed', 'Unemployed', 'Student', 'Retired'],
                 'rent_burden': ['≤30% (Affordable)', '31-50% (Moderate)', '51-80% (High)', '>80% (Very High)', 'Unknown']
             },
-            color_discrete_sequence=px.colors.sequential.RdBu_r
+            color_discrete_map=RENT_BURDEN_COLORS
         )
-        fig.update_layout(height=400, legend_title_text='Rent Burden')
+        fig.update_layout(
+            height=400,
+            legend_title_text='Rent Burden',
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("""
@@ -225,9 +259,15 @@ def show_education_employment_tab(df):
             labels=dict(x="Satisfaction Level", y="Education Level", color="Percentage (%)"),
             x=['Very Dissatisfied', 'Dissatisfied', 'Neutral', 'Satisfied', 'Very Satisfied'],
             y=education_satisfaction_cross.index,
-            color_continuous_scale='RdYlGn'
+            color_continuous_scale=COLOR_SCALES['sequential']
         )
-        fig.update_layout(height=400)
+        fig.update_layout(
+            height=400,
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -250,9 +290,15 @@ def show_education_employment_tab(df):
             labels=dict(x="Satisfaction Level", y="Employment Status", color="Percentage (%)"),
             x=['Very Dissatisfied', 'Dissatisfied', 'Neutral', 'Satisfied', 'Very Satisfied'],
             y=employment_satisfaction_cross.index,
-            color_continuous_scale='RdYlGn'
+            color_continuous_scale=COLOR_SCALES['sequential']
         )
-        fig.update_layout(height=400)
+        fig.update_layout(
+            height=400,
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("""
@@ -306,9 +352,17 @@ def show_education_employment_tab(df):
         category_orders={
             'education_level': ['Basic', 'High School', 'Vocational', "Bachelor's", "Master's", 'PhD']
         },
-        barmode='group'
+        barmode='group',
+        color_discrete_sequence=CHART_COLORS
     )
-    fig.update_layout(height=500, legend_title_text='Reason')
+    fig.update_layout(
+        height=500,
+        legend_title_text='Reason',
+        plot_bgcolor=BACKGROUND_COLORS[0],
+        paper_bgcolor=BACKGROUND_COLORS[3],
+        font_color=TEXT_COLORS[2],
+        title_font_color=TEXT_COLORS[0]
+    )
     st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("""

@@ -2,6 +2,12 @@
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import sys
+from pathlib import Path
+
+# Add the parent directory to system path
+sys.path.append(str(Path(__file__).parent.parent))
+from config import *
 
 def show_housing_types_sizes_tab(df):
     """
@@ -32,8 +38,14 @@ def show_housing_types_sizes_tab(df):
             house_type_counts, 
             values='Count', 
             names='House Type',
-            color_discrete_sequence=px.colors.qualitative.Set2,
+            color_discrete_sequence=PRIMARY_COLORS,
             title="Distribution of Apartments vs Houses"
+        )
+        fig_house_type.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         fig_house_type.update_traces(textposition='inside', textinfo='percent+label')
         st.plotly_chart(fig_house_type, use_container_width=True)
@@ -61,7 +73,13 @@ def show_housing_types_sizes_tab(df):
             y='Count',
             color='Bedrooms',
             title="Number of Bedrooms Distribution",
-            color_discrete_sequence=px.colors.qualitative.Set1
+            color_discrete_sequence=SECONDARY_COLORS
+        )
+        fig_bedrooms.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig_bedrooms, use_container_width=True)
 
@@ -98,7 +116,13 @@ def show_housing_types_sizes_tab(df):
             y='Count',
             color='Area (m²)',
             title="Housing Size Distribution (m²)",
-            color_discrete_sequence=px.colors.sequential.Viridis
+            color_discrete_sequence=CHART_COLORS
+        )
+        fig_area.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig_area, use_container_width=True)
     
@@ -115,7 +139,13 @@ def show_housing_types_sizes_tab(df):
             color='house_type',
             title="Housing Size by Type",
             labels={'area_numerical': 'Area (m²)', 'house_type': 'Housing Type'},
-            color_discrete_sequence=px.colors.qualitative.Safe
+            color_discrete_sequence=PRIMARY_COLORS
+        )
+        fig_area_by_type.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig_area_by_type, use_container_width=True)
     
@@ -149,7 +179,13 @@ def show_housing_types_sizes_tab(df):
         title="Housing Types by Number of Bedrooms",
         barmode='group',
         labels={'house_type': 'Housing Type', 'count': 'Count', 'bedroom_count': 'Bedrooms'},
-        color_discrete_sequence=px.colors.qualitative.Bold
+        color_discrete_sequence=ACCENT_COLORS
+    )
+    fig_housing_bedroom.update_layout(
+        plot_bgcolor=BACKGROUND_COLORS[0],
+        paper_bgcolor=BACKGROUND_COLORS[3],
+        font_color=TEXT_COLORS[2],
+        title_font_color=TEXT_COLORS[0]
     )
     st.plotly_chart(fig_housing_bedroom, use_container_width=True)
     
@@ -176,7 +212,13 @@ def show_housing_types_sizes_tab(df):
         title="Housing Size by Satisfaction Level",
         labels={'area_numerical': 'Area (m²)', 'satisfaction_level': 'Satisfaction Level'},
         category_orders={'satisfaction_level': satisfaction_order},
-        color_discrete_sequence=px.colors.sequential.RdBu
+        color_discrete_map=SATISFACTION_COLORS
+    )
+    fig_satisfaction_area.update_layout(
+        plot_bgcolor=BACKGROUND_COLORS[0],
+        paper_bgcolor=BACKGROUND_COLORS[3],
+        font_color=TEXT_COLORS[2],
+        title_font_color=TEXT_COLORS[0]
     )
     st.plotly_chart(fig_satisfaction_area, use_container_width=True)
     
@@ -213,6 +255,13 @@ def show_housing_types_sizes_tab(df):
         color='household_size_grouped',
         title="Average Housing Size by Household Size",
         labels={'area_numerical': 'Average Area (m²)', 'household_size_grouped': 'Household Size'},
-        color_discrete_sequence=px.colors.sequential.Plasma
+        color_discrete_sequence=COLOR_SCALES['sequential']
+    )
+    fig_household_area.update_layout(
+        plot_bgcolor=BACKGROUND_COLORS[0],
+        paper_bgcolor=BACKGROUND_COLORS[3],
+        font_color=TEXT_COLORS[2],
+        title_font_color=TEXT_COLORS[0],
+        showlegend=False  # Hide legend since colors are just for visual grouping
     )
     st.plotly_chart(fig_household_area, use_container_width=True)

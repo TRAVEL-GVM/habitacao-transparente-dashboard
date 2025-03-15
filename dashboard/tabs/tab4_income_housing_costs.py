@@ -4,6 +4,12 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+import sys
+from pathlib import Path
+
+# Add the parent directory to system path
+sys.path.append(str(Path(__file__).parent.parent))
+from config import *
 
 
 def show_income_housing_costs_tab(df):
@@ -27,22 +33,19 @@ def show_income_housing_costs_tab(df):
             rent_burden_counts = rent_data["rent_burden"].value_counts().reset_index()
             rent_burden_counts.columns = ["Rent Burden", "Count"]
 
-            # Color map for rent burden
-            burden_colors = {
-                "≤30% (Affordable)": "#109618",  # Green
-                "31-50% (Moderate)": "#FFA500",  # Orange
-                "51-80% (High)": "#FF4500",  # OrangeRed
-                ">80% (Very High)": "#DC143C",  # Crimson
-                "Unknown": "#CCCCCC",  # Gray
-            }
-
             fig = px.pie(
                 rent_burden_counts,
                 values="Count",
                 names="Rent Burden",
                 color="Rent Burden",
-                color_discrete_map=burden_colors,
+                color_discrete_map=RENT_BURDEN_COLORS,
                 title="Distribution of Rent Burden Categories",
+            )
+            fig.update_layout(
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                font_color=TEXT_COLORS[2],
+                title_font_color=TEXT_COLORS[0]
             )
             st.plotly_chart(fig)
 
@@ -60,7 +63,7 @@ def show_income_housing_costs_tab(df):
                 x="rendimento_numerical",
                 y="valor-mensal-renda",
                 color="rent_burden",
-                color_discrete_map=burden_colors,
+                color_discrete_map=RENT_BURDEN_COLORS,
                 size=rent_data["percentagem-renda-paga"].tolist(),
                 hover_data=["distrito", "percentagem-renda-paga"],
                 title="Monthly Rent vs Income",
@@ -69,6 +72,12 @@ def show_income_housing_costs_tab(df):
                     "valor-mensal-renda": "Monthly Rent (€)",
                     "rent_burden": "Rent Burden",
                 },
+            )
+            fig.update_layout(
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                font_color=TEXT_COLORS[2],
+                title_font_color=TEXT_COLORS[0]
             )
 
             # Add a 30% rent-to-income ratio reference line
@@ -85,7 +94,7 @@ def show_income_housing_costs_tab(df):
                     x=income_range,
                     y=recommended_rent,
                     mode="lines",
-                    line=dict(color="black", dash="dash"),
+                    line=dict(color=TEXT_COLORS[0], dash="dash"),
                     name="30% Income (Recommended)",
                 )
             )
@@ -105,16 +114,18 @@ def show_income_housing_costs_tab(df):
             x="housing_situation",
             y="rendimento_numerical",
             color="housing_situation",
-            color_discrete_map={
-                "Renting": "#3366CC",
-                "Owned": "#109618",
-                "Living with others": "#FF9900",
-            },
+            color_discrete_map=HOUSING_COLORS,
             title="Income Distribution by Housing Situation",
             labels={
                 "housing_situation": "Housing Situation",
                 "rendimento_numerical": "Annual Income (€)",
             },
+        )
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig)
 
@@ -186,7 +197,13 @@ def show_income_housing_costs_tab(df):
                 "housing_situation": "Housing Situation",
                 "Count": "Number of Respondents",
             },
-            color_discrete_sequence=["#109618", "#FFA500", "#FF4500", "#DC143C"],
+            color_discrete_sequence=COLOR_SCALES['sequential'],
+        )
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig)
 
@@ -220,6 +237,13 @@ def show_income_housing_costs_tab(df):
                 "rental_year": "Rental Start Year",
                 "valor-mensal-renda": "Average Monthly Rent (€)",
             },
+            color_discrete_sequence=[PRIMARY_COLORS[0]]
+        )
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig)
 
@@ -248,17 +272,21 @@ def show_income_housing_costs_tab(df):
                 "rental_year": "Rental Start Year",
                 "rent_income_ratio": "Rent to Income Ratio (%)",
             },
+            color_discrete_sequence=[SECONDARY_COLORS[0]]
         )
-
-        # Add a reference line at 30%
         fig.add_hline(
             y=30,
             line_dash="dash",
-            line_color="red",
+            line_color=RENT_BURDEN_COLORS['≤30% (Affordable)'],
             annotation_text="30% Affordability Threshold",
             annotation_position="bottom right",
         )
-
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig)
 
     # Interactive income simulator
@@ -311,17 +339,24 @@ def show_income_housing_costs_tab(df):
             y="Average Rent",
             title="Average Rent by District",
             labels={"Average Rent": "Average Monthly Rent (€)"},
+            color_discrete_sequence=[PRIMARY_COLORS[0]]
         )
 
         # Add a line for affordable rent based on input
         fig.add_hline(
             y=affordable_housing,
             line_dash="dash",
-            line_color="green",
+            line_color=RENT_BURDEN_COLORS['≤30% (Affordable)'],
             annotation_text="Your Affordable Rent",
             annotation_position="top right",
         )
 
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig)
 
     with col2:
@@ -344,16 +379,20 @@ def show_income_housing_costs_tab(df):
             color="Affordable",
             title="Housing Affordability Index by District",
             labels={"Affordability Index": "Affordability Index (>1 is affordable)"},
-            color_discrete_map={True: "green", False: "red"},
+            color_discrete_map={True: RENT_BURDEN_COLORS['≤30% (Affordable)'], 
+                              False: RENT_BURDEN_COLORS['>80% (Very High)']},
         )
-
-        # Add reference line at affordability threshold
         fig.add_hline(
             y=1,
             line_dash="dash",
-            line_color="black",
+            line_color=TEXT_COLORS[0],
             annotation_text="Affordability Threshold",
             annotation_position="bottom right",
         )
-
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig)

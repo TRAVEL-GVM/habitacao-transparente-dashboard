@@ -6,6 +6,12 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from streamlit_folium import folium_static
+import sys
+from pathlib import Path
+
+# Add the parent directory to system path
+sys.path.append(str(Path(__file__).parent.parent))
+from config import *
 
 
 # Create a numeric satisfaction score
@@ -122,9 +128,16 @@ def show_satisfaction_levels_tab(df):
             barmode="stack",
             title="Satisfaction Distribution by Income Bracket (%)",
             labels={"income_category": "Annual Income", "value": "Percentage"},
-            color_discrete_sequence=px.colors.qualitative.Set2,
+            color_discrete_map=SATISFACTION_COLORS,
         )
-        fig1.update_layout(legend_title="Satisfaction Level", height=500)
+        fig1.update_layout(
+            legend_title="Satisfaction Level",
+            height=500,
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig1, use_container_width=True)
 
     with income_tab2:
@@ -146,10 +159,16 @@ def show_satisfaction_levels_tab(df):
             y="Average Satisfaction Score",
             title="Average Satisfaction Score by Income Bracket",
             color="Average Satisfaction Score",
-            color_continuous_scale=px.colors.sequential.Viridis,
+            color_continuous_scale=COLOR_SCALES['sequential'],
             text_auto='.2f'
         )
-        fig2.update_layout(height=500)
+        fig2.update_layout(
+            height=500,
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig2, use_container_width=True)
         
         # Calculate correlation
@@ -260,7 +279,7 @@ def show_satisfaction_levels_tab(df):
         fig = px.imshow(
             satisfaction_pivot,
             text_auto=True,
-            color_continuous_scale="Blues",
+            color_continuous_scale=COLOR_SCALES['sequential'],
             title="Satisfaction Levels by Housing Situation",
             labels={
                 "x": "Satisfaction Level",
@@ -268,7 +287,13 @@ def show_satisfaction_levels_tab(df):
                 "color": "Count",
             },
         )
-        fig.update_layout(height=400)
+        fig.update_layout(
+            height=400,
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
+        )
         st.plotly_chart(fig)
 
         # Add explanation for the heatmap
@@ -297,8 +322,14 @@ def show_satisfaction_levels_tab(df):
             values="Count",
             names="Satisfaction Level",
             color="Satisfaction Level",
-            color_discrete_map=color_map,
+            color_discrete_map=SATISFACTION_COLORS,
             title="Overall Satisfaction Distribution",
+        )
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[3],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig)
 
@@ -370,8 +401,14 @@ def show_satisfaction_levels_tab(df):
         x="Count",
         orientation="h",
         color="Count",
-        color_continuous_scale="Reds",
+        color_continuous_scale=COLOR_SCALES['sequential'],
         title="Reasons for Housing Dissatisfaction",
+    )
+    fig.update_layout(
+        plot_bgcolor=BACKGROUND_COLORS[0],
+        paper_bgcolor=BACKGROUND_COLORS[3],
+        font_color=TEXT_COLORS[2],
+        title_font_color=TEXT_COLORS[0]
     )
     st.plotly_chart(fig)
 
@@ -482,9 +519,15 @@ def show_satisfaction_levels_tab(df):
             x="rent_burden",
             y="Count",
             color="Satisfaction Level",
-            color_discrete_map=color_map,
+            color_discrete_map=SATISFACTION_COLORS,
             title="Satisfaction Levels by Rent Burden (% of Income)",
             labels={"rent_burden": "Rent as % of Income"},
+        )
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig)
 
@@ -721,21 +764,21 @@ def show_satisfaction_levels_tab(df):
                 score = district_satisfaction_dict[district_name]
                 # Calculate color based on score (-2 to +2)
                 if score < -1.5:
-                    color = "#d73027"  # Very dark red
+                    color = SATISFACTION_COLORS['Very Dissatisfied']
                 elif score < -0.5:
-                    color = "#fc8d59"  # Light red
+                    color = SATISFACTION_COLORS['Dissatisfied']
                 elif score < 0.5:
-                    color = "#fee08b"  # Darker yellow
+                    color = SATISFACTION_COLORS['Neutral']
                 elif score < 1.5:
-                    color = "#91cf60"  # Light green
+                    color = SATISFACTION_COLORS['Satisfied']
                 else:
-                    color = "#1a9850"  # Dark green
+                    color = SATISFACTION_COLORS['Very Satisfied']
             except KeyError:
                 color = "#f7f7f7"  # Gray for districts with no data
 
             return {
                 "fillColor": color,
-                "weight": 1.5,  # Slightly thicker border
+                "weight": 1.5,
                 "opacity": 1,
                 "color": "white",  # White border to distinguish districts
                 "dashArray": "",
