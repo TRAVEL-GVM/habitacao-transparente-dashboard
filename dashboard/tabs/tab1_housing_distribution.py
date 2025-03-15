@@ -2,6 +2,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import sys
+from pathlib import Path
+
+# Add the parent directory to system path
+sys.path.append(str(Path(__file__).parent.parent))
+from config import *
 
 
 def show_housing_distribution_tab(df):
@@ -34,21 +40,23 @@ def show_housing_distribution_tab(df):
             1
         ).astype(str) + "%"
 
-        # Create enhanced pie chart with percentages
+        # Create enhanced pie chart with percentages using HOUSING_COLORS
         fig = px.pie(
             housing_counts,
             values="Count",
             names="Housing Situation",
             color="Housing Situation",
-            color_discrete_map={
-                "Renting": "#3366CC",
-                "Owned": "#109618",
-                "Living with others": "#FF9900",
-            },
+            color_discrete_map=HOUSING_COLORS,
             title="Distribution of Housing Situations",
             hover_data=["Percentage"],
         )
         fig.update_traces(textinfo="percent+label")
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[3],  # White background
+            paper_bgcolor=BACKGROUND_COLORS[3],  # White paper
+            title_font_color=TEXT_COLORS[0],    # Dark green title
+            font_color=TEXT_COLORS[2],          # Medium green text
+        )
         st.plotly_chart(fig)
 
         # Add insights below the chart
@@ -100,18 +108,29 @@ def show_housing_distribution_tab(df):
             x="age_group",
             y="Percentage",
             color="Housing Situation",
-            color_discrete_map={
-                "Renting": "#3366CC",
-                "Owned": "#109618",
-                "Living with others": "#FF9900",
-            },
+            color_discrete_map=HOUSING_COLORS,  # Use consistent housing colors
             title="Housing Situation by Birth Decade",
             labels={
                 "age_group": "Birth Decade (Age Range)",
                 "Percentage": "Percentage (%)",
             },
         )
-        fig.update_layout(xaxis_title="Birth Decade (Approximate Age Range)")
+        fig.update_layout(
+            xaxis_title="Birth Decade (Approximate Age Range)",
+            plot_bgcolor=BACKGROUND_COLORS[0],    # Light green background
+            paper_bgcolor=BACKGROUND_COLORS[3],   # White paper
+            font_color=TEXT_COLORS[2],           # Medium green text
+            title_font_color=TEXT_COLORS[0],     # Dark green title
+            legend_title_font_color=TEXT_COLORS[1],  # Dark green legend title
+            xaxis=dict(
+                tickfont=dict(color=TEXT_COLORS[2]),  # Medium green tick labels
+                title_font=dict(color=TEXT_COLORS[1])  # Dark green axis title
+            ),
+            yaxis=dict(
+                tickfont=dict(color=TEXT_COLORS[2]),  # Medium green tick labels
+                title_font=dict(color=TEXT_COLORS[1])  # Dark green axis title
+            ),
+        )
         st.plotly_chart(fig)
 
         # Add insights about generational differences
@@ -194,7 +213,13 @@ def show_housing_distribution_tab(df):
             x="Education Level",
             y="Count",
             color="Education Level",
+            color_discrete_sequence=PRIMARY_COLORS,  # Use primary color palette
             title=f"Education Level Distribution for {selected_situation}",
+        )
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            showlegend=False  # Hide legend since colors are just for aesthetics
         )
         st.plotly_chart(fig)
 
@@ -219,13 +244,7 @@ def show_housing_distribution_tab(df):
                 title="Distribution of Rent Burden",
                 hole=0.4,
                 color="Rent Burden",
-                color_discrete_map={
-                    "≤30% (Affordable)": "#109618",
-                    "31-50% (Moderate)": "#FF9900",
-                    "51-80% (High)": "#DC3912",
-                    ">80% (Very High)": "#990000",
-                    "Unknown": "#CCCCCC",
-                },
+                color_discrete_map=RENT_BURDEN_COLORS,
             )
             st.plotly_chart(fig)
 

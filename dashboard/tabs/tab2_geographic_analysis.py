@@ -2,6 +2,7 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+from config import *
 
 def show_geographic_analysis_tab(df):
     """
@@ -44,11 +45,7 @@ def show_geographic_analysis_tab(df):
             x='distrito',
             y='count',
             color='housing_situation',
-            color_discrete_map={
-                'Renting': '#3366CC', 
-                'Owned': '#109618', 
-                'Living with others': '#FF9900'
-            },
+            color_discrete_map=HOUSING_COLORS,
             title='Housing Situations by District',
             labels={'distrito': 'District', 'count': 'Count', 'housing_situation': 'Housing Situation'}
         )
@@ -56,7 +53,11 @@ def show_geographic_analysis_tab(df):
             xaxis_title="District",
             yaxis_title="Number of Residents",
             legend_title="Housing Situation",
-            height=500
+            height=500,
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         st.plotly_chart(fig)
         
@@ -84,7 +85,13 @@ def show_geographic_analysis_tab(df):
             top_districts,
             values='Count',
             names='District',
-            title='Distribution of Top 5 Districts'
+            title='Distribution of Top 5 Districts',
+            color_discrete_sequence=PRIMARY_COLORS
+        )
+        fig.update_layout(
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0]
         )
         fig.update_traces(textposition='inside', textinfo='percent+label')
         st.plotly_chart(fig)
@@ -104,17 +111,17 @@ def show_geographic_analysis_tab(df):
         color='housing_situation',
         title='Housing Situation Percentage by District',
         labels={'distrito': 'District', 'percentage': 'Percentage (%)', 'housing_situation': 'Housing Situation'},
-        color_discrete_map={
-            'Renting': '#3366CC', 
-            'Owned': '#109618', 
-            'Living with others': '#FF9900'
-        }
+        color_discrete_map=HOUSING_COLORS
     )
     fig.update_layout(
         xaxis_title="District",
         yaxis_title="Percentage of Residents",
         legend_title="Housing Situation",
-        height=500
+        height=500,
+        plot_bgcolor=BACKGROUND_COLORS[0],
+        paper_bgcolor=BACKGROUND_COLORS[3],
+        font_color=TEXT_COLORS[2],
+        title_font_color=TEXT_COLORS[0]
     )
     st.plotly_chart(fig)
     
@@ -156,12 +163,17 @@ def show_geographic_analysis_tab(df):
                 y='valor-mensal-renda',
                 color='distrito',
                 title='Monthly Rent by District',
-                labels={'valor-mensal-renda': 'Monthly Rent (€)', 'distrito': 'District'}
+                labels={'valor-mensal-renda': 'Monthly Rent (€)', 'distrito': 'District'},
+                color_discrete_sequence=PRIMARY_COLORS
             )
             fig.update_layout(
                 xaxis_title="District",
                 yaxis_title="Monthly Rent (€)",
-                height=400
+                height=400,
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                font_color=TEXT_COLORS[2],
+                title_font_color=TEXT_COLORS[0]
             )
             st.plotly_chart(fig)
             
@@ -188,12 +200,17 @@ def show_geographic_analysis_tab(df):
                 y='valor-compra',
                 color='distrito',
                 title='Property Purchase Price by District',
-                labels={'valor-compra': 'Purchase Price (€)', 'distrito': 'District'}
+                labels={'valor-compra': 'Purchase Price (€)', 'distrito': 'District'},
+                color_discrete_sequence=SECONDARY_COLORS
             )
             fig.update_layout(
                 xaxis_title="District",
                 yaxis_title="Purchase Price (€)",
-                height=400
+                height=400,
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                font_color=TEXT_COLORS[2],
+                title_font_color=TEXT_COLORS[0]
             )
             st.plotly_chart(fig)
             
@@ -228,13 +245,17 @@ def show_geographic_analysis_tab(df):
                 category_orders={
                     'rent_burden': ['≤30% (Affordable)', '31-50% (Moderate)', '51-80% (High)', '>80% (Very High)', 'Unknown']
                 },
-                color_discrete_sequence=px.colors.sequential.Reds
+                color_discrete_map=RENT_BURDEN_COLORS
             )
             fig.update_layout(
                 xaxis_title="District",
                 yaxis_title="Number of Residents",
                 legend_title="Rent Burden",
-                height=500
+                height=500,
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                font_color=TEXT_COLORS[2],
+                title_font_color=TEXT_COLORS[0]
             )
             st.plotly_chart(fig)
             
@@ -263,12 +284,17 @@ def show_geographic_analysis_tab(df):
                     y='property_age',
                     color='distrito',
                     title='Property Age by District',
-                    labels={'property_age': 'Property Age (Years)', 'distrito': 'District'}
+                    labels={'property_age': 'Property Age (Years)', 'distrito': 'District'},
+                    color_discrete_sequence=ACCENT_COLORS
                 )
                 fig.update_layout(
                     xaxis_title="District",
                     yaxis_title="Property Age (Years)",
-                    height=500
+                    height=500,
+                    plot_bgcolor=BACKGROUND_COLORS[0],
+                    paper_bgcolor=BACKGROUND_COLORS[3],
+                    font_color=TEXT_COLORS[2],
+                    title_font_color=TEXT_COLORS[0]
                 )
                 st.plotly_chart(fig)
                 
