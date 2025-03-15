@@ -1,11 +1,13 @@
 import os
-import streamlit as st
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+import streamlit as st
 from tabs.tab1_housing_distribution import show_housing_distribution_tab
 from tabs.tab2_geographic_analysis import show_geographic_analysis_tab
 from tabs.tab3_satisfaction_levels import show_satisfaction_levels_tab
 from tabs.tab4_income_housing_costs import show_income_housing_costs_tab
+from tabs.tab5_education_employment import show_education_employment_tab
 
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Dashboard do Habitação Transparente")
@@ -169,11 +171,13 @@ geographic distribution, satisfaction levels, and financial aspects.
 """)
 
 # Create tabs for different insights
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Housing Distribution", 
     "Geographic Analysis", 
     "Satisfaction Levels", 
-    "Income vs Housing Costs"
+    "Income vs Housing Costs",
+    "Education & Employment",
+    "Housing Types & Sizes"
 ])
 
 with tab1:
@@ -187,3 +191,6 @@ with tab3:
 
 with tab4:
     show_income_housing_costs_tab(df)
+    
+with tab5:
+    show_education_employment_tab(df)
