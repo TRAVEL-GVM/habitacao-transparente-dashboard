@@ -6,17 +6,19 @@ Este repositório contém uma aplicação desenvolvida em [Streamlit](https://st
 
 - **`app.py`**: Arquivo principal da aplicação em Streamlit.
 - **`requirements.txt`**: Lista de dependências necessárias para executar o projeto.
-- **`data.csv`**: Dataset https://github.com/dssg-pt/habitacao-transparente-dados
-  
+- **`data.csv`**: Dados recolhidos no âmbito do projeto Habitação Transparente [@dssg-pt](https://github.com/dssg-pt) > <https://github.com/dssg-pt/habitacao-transparente-dados>
+
 ## 🚀 Instalação e Execução
 
 ### 1️⃣ Clonar o Repositório
+
 ```bash
-git clone https://github.com/user/repo.git
-cd repo
+git clone https://github.com/vitorbabo/habitacao-transparente-dashboard.git
+cd habitacao-transparente-dashboard
 ```
 
 ### 2️⃣ Criar um Ambiente Virtual (opcional, mas recomendado)
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/macOS
@@ -24,11 +26,13 @@ venv\Scripts\activate  # Windows
 ```
 
 ### 3️⃣ Instalar as Dependências
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 4️⃣ Executar a Aplicação (localmente)
+
 ```bash
 streamlit run dashboard/app.py
 ```
