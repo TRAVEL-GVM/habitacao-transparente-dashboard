@@ -30,5 +30,5 @@ pip install -r requirements.txt
 
 ### 4️⃣ Executar a Aplicação (localmente)
 ```bash
-streamlit run app.py
+streamlit run dashboard/app.py
 ```
