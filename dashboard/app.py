@@ -33,28 +33,68 @@ def load_data(file_path):
     
     # Parse income brackets for easier categorization
     def parse_income(income_str):
+        # Handle NaN values
         if pd.isna(income_str):
-            return np.nan
-        elif income_str == 'sem-rendimento':
-            return 0
-        elif income_str == '<7001':
-            return 3500
-        elif income_str == '7001-12000':
-            return 9500
-        elif income_str == '12001-20000':
-            return 16000
-        elif income_str == '20001-35000':
-            return 27500
-        elif income_str == '35001-50000':
-            return 42500
-        elif income_str == '50001-80000':
-            return 65000
-        elif income_str == '>80001':
-            return 100000
-        else:
-            return np.nan
-    
-    df['rendimento_numerical'] = df['rendimento-anual'].apply(parse_income)
+            return np.nan, np.nan
+        
+        # Extract the income range from brackets if present
+        if isinstance(income_str, list):
+            if not income_str:  # Empty list
+                return np.nan, np.nan
+            income_str = income_str[0]  # Take the first element if it's a list
+        
+        # Remove any extraneous characters or whitespace
+        clean_income_str = str(income_str).strip().lower()
+        
+        # Income bracket mapping
+        income_mapping = {
+            'sem-rendimento': 0,
+            '<7001': 3500,
+            '7001-12000': 9500,
+            '12001-20000': 16000,
+            '20001-35000': 27500,
+            '35001-50000': 42500,
+            '50001-80000': 65000,
+            '>80001': 100000
+        }
+        
+        # Return mapped value if direct match exists
+        if clean_income_str in income_mapping:
+            return clean_income_str, income_mapping[clean_income_str]
+        
+        # Handle edge cases with regex pattern matching
+        import re
+        
+        # Match patterns like "<7001", "7001-12000", ">80001"
+        pattern = r'(<|>)?(\d+)(?:-(\d+))?'
+        match = re.match(pattern, clean_income_str)
+        
+        if match:
+            prefix, start, end = match.groups()
+            
+            # Standardize the format for cleaned string
+            if prefix == '<':
+                clean_str = f"<{start}"
+                value = float(start) / 2  # Half of upper bound
+            elif prefix == '>':
+                clean_str = f">{start}"
+                value = float(start) * 1.25  # 25% more than lower bound
+            elif end:  # Range like "7001-12000"
+                clean_str = f"{start}-{end}"
+                value = (float(start) + float(end)) / 2  # Midpoint
+            else:  # Single value
+                clean_str = start
+                value = float(start)
+                
+            return clean_str, value
+        
+        # If no patterns matched
+        return np.nan, np.nan
+
+    # Apply the function to the dataframe and create two new columns
+    cleaned_values = df['rendimento-anual'].apply(parse_income)
+    df['rendimento_clean'] = [x[0] for x in cleaned_values]
+    df['rendimento_numerical'] = [x[1] for x in cleaned_values]
     
     # Create a clean housing situation column
     df['housing_situation'] = df['situacao-habitacional_primary'].map({

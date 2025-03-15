@@ -1,6 +1,7 @@
 # tab2_geographic_analysis.py
 import streamlit as st
 import plotly.express as px
+import pandas as pd
 
 def show_geographic_analysis_tab(df):
     """
@@ -20,10 +21,10 @@ def show_geographic_analysis_tab(df):
         st.metric("Total Districts", total_districts)
     with col2:
         most_expensive_district = df[df['housing_situation'] == 'Renting'].groupby('distrito')['valor-mensal-renda'].mean().idxmax()
-        st.metric("Most Expensive District (Rent)", most_expensive_district)
+        st.metric("Most Expensive District (Rent)", most_expensive_district.capitalize())
     with col3:
         highest_ownership = df.groupby('distrito')['housing_situation'].apply(lambda x: (x == 'Owned').mean() * 100).idxmax()
-        st.metric("Highest Ownership Rate", highest_ownership)
+        st.metric("Highest Ownership Rate", highest_ownership.capitalize())
     
     st.markdown("""
     ### Understanding the Geographic Distribution
@@ -70,6 +71,7 @@ def show_geographic_analysis_tab(df):
         st.subheader("Top Districts")
         top_districts = df['distrito'].value_counts().reset_index()
         top_districts.columns = ['District', 'Count']
+        top_districts['District'] = top_districts['District'].str.capitalize()
         top_districts = top_districts.head(5)
         
         st.dataframe(top_districts, hide_index=True)
@@ -93,6 +95,7 @@ def show_geographic_analysis_tab(df):
     # Calculate percentages
     district_percentages = df.groupby('distrito')['housing_situation'].value_counts(normalize=True).mul(100).round(1).reset_index(name='percentage')
     district_percentages = district_percentages.rename(columns={'level_1': 'housing_situation'})
+    district_percentages['distrito'] = district_percentages['distrito'].str.capitalize()
     
     fig = px.bar(
         district_percentages,
@@ -127,11 +130,11 @@ def show_geographic_analysis_tab(df):
     
     region_selector = st.selectbox(
         "Select Region to View Housing Costs",
-        options=["All"] + sorted(df['distrito'].unique().tolist())
+        options=["All"] + sorted(pd.Series(df['distrito'].unique()).str.capitalize().tolist())
     )
     
     if region_selector != "All":
-        region_df = df[df['distrito'] == region_selector]
+        region_df = df[df['distrito'].str.capitalize() == region_selector]
         st.markdown(f"Analyzing housing costs for **{region_selector}** district")
     else:
         region_df = df
@@ -211,6 +214,7 @@ def show_geographic_analysis_tab(df):
     with col1:
         # Rent burden by district
         rent_burden_data = df[df['housing_situation'] == 'Renting'].dropna(subset=['rent_burden', 'distrito'])
+        rent_burden_data['distrito'] = rent_burden_data['distrito'].str.capitalize()
         if not rent_burden_data.empty:
             burden_counts = rent_burden_data.groupby(['distrito', 'rent_burden']).size().reset_index(name='count')
             
@@ -247,6 +251,7 @@ def show_geographic_analysis_tab(df):
         # Property age by district
         if 'ano-compra' in df.columns:
             purchase_year_data = df[df['housing_situation'] == 'Owned'].dropna(subset=['ano-compra', 'distrito'])
+            purchase_year_data['distrito'] = purchase_year_data['distrito'].str.capitalize()
             if not purchase_year_data.empty:
                 # Calculate property age
                 current_year = 2025  # Current year of analysis

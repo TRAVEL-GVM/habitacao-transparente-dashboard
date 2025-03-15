@@ -131,7 +131,7 @@ def show_housing_distribution_tab(df):
 
     selected_situation = st.selectbox(
         "Select Housing Situation to Explore",
-        options=["All", "Renting", "Owned", "Living with others"],
+        options=["Renting", "Owned", "Living with others", "All"]
     )
 
     if selected_situation != "All":
