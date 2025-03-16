@@ -211,7 +211,7 @@ st.image("design docs/dssg_icon_header.svg",width=250)
 # Create tabs for different insights
 tab0, tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "Visão Geral",
-    "Distribuição de Habitações", 
+    "Situações Habitacionais", 
     "Análise Geográfica", 
     "Níveis de Satisfação", 
     "Rendimento vs Custos de Habitação",

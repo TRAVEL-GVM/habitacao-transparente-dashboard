@@ -1,18 +1,17 @@
 # tab3_satisfaction_levels.py
 import json
+import sys
+from pathlib import Path
 
 import folium
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 from streamlit_folium import folium_static
-import sys
-from pathlib import Path
 
 # Add the parent directory to system path
 sys.path.append(str(Path(__file__).parent.parent))
-from config import *
-
+from config import BACKGROUND_COLORS, COLOR_SCALES, SATISFACTION_COLORS, TEXT_COLORS
 
 # Create a numeric satisfaction score
 satisfaction_scores = {
@@ -32,83 +31,90 @@ def show_satisfaction_levels_tab(df):
     df (DataFrame): The processed housing data
     """
     st.header("Análise de Níveis de Satisfação Habitacional")
-    
+
     # Introdução com estilo melhorado
-    st.markdown("""
-    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32;">
+    st.markdown(
+        """
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; margin-bottom: 20px;">
     <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
     <p>Esta secção fornece uma análise aprofundada dos níveis de satisfação habitacional em Portugal, 
     explorando como diferentes fatores socioeconómicos influenciam a perceção da qualidade habitacional.</p>
     <ul>
-      <li><strong>Tendências Principais:</strong> Existe uma variação significativa na satisfação habitacional entre diferentes grupos demográficos</li>
-      <li><strong>Fatores de Influência:</strong> Rendimento, localização, tipo de habitação e situação profissional impactam diretamente a satisfação</li>
-      <li><strong>Desafios Identificados:</strong> Altos custos habitacionais e inadequação do espaço são grandes contribuintes para a insatisfação</li>
+        <li><strong>Tendências Principais:</strong> Existe uma variação significativa na satisfação habitacional entre diferentes grupos demográficos</li>
+        <li><strong>Fatores de Influência:</strong> Rendimento, localização, tipo de habitação e situação profissional impactam diretamente a satisfação</li>
+        <li><strong>Desafios Identificados:</strong> Altos custos habitacionais e inadequação do espaço são grandes contribuintes para a insatisfação</li>
     </ul>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Métricas principais
     # Calcular algumas estatísticas para as métricas rápidas
     total_responses = len(df)
-    
+
     # Calcular percentagem de níveis de satisfação
-    satisfaction_counts = df['satisfaction_level'].value_counts(normalize=True) * 100
-    
-    satisfied_pct = satisfaction_counts.get('Very Satisfied', 0) + satisfaction_counts.get('Satisfied', 0)
-    dissatisfied_pct = satisfaction_counts.get('Very Dissatisfied', 0) + satisfaction_counts.get('Dissatisfied', 0)
-    
+    satisfaction_counts = df["satisfaction_level"].value_counts(normalize=True) * 100
+
+    satisfied_pct = satisfaction_counts.get(
+        "Very Satisfied", 0
+    ) + satisfaction_counts.get("Satisfied", 0)
+    dissatisfied_pct = satisfaction_counts.get(
+        "Very Dissatisfied", 0
+    ) + satisfaction_counts.get("Dissatisfied", 0)
+
     # Criar 3 colunas para métricas rápidas
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         st.metric(
             label="Total de Respostas",
             value=total_responses,
-            help="Número total de respostas no inquérito"
+            help="Número total de respostas no inquérito",
         )
-    
+
     with col2:
         st.metric(
             label="Taxa de Satisfação",
             value=f"{satisfied_pct:.1f}%",
-            help="Percentagem de respostas 'Satisfeito' ou 'Muito Satisfeito'"
+            help="Percentagem de respostas 'Satisfeito' ou 'Muito Satisfeito'",
         )
-    
+
     with col3:
         st.metric(
             label="Taxa de Insatisfação",
             value=f"{dissatisfied_pct:.1f}%",
-            help="Percentagem de respostas 'Insatisfeito' ou 'Muito Insatisfeito'"
+            help="Percentagem de respostas 'Insatisfeito' ou 'Muito Insatisfeito'",
         )
     # Define better income bracket ordering and visualization
     income_order = [
-        'sem-rendimento', 
-        '<7001', 
-        '7001-12000', 
-        '12001-20000', 
-        '20001-35000', 
-        '35001-50000', 
-        '50001-80000', 
-        '>80001'
+        "sem-rendimento",
+        "<7001",
+        "7001-12000",
+        "12001-20000",
+        "20001-35000",
+        "35001-50000",
+        "50001-80000",
+        ">80001",
     ]
 
     # More human-readable income labels for display
     income_labels = {
-        'sem-rendimento': 'No Income', 
-        '<7001': 'Up to €7,000',
-        '7001-12000': '€7,001-€12,000',
-        '12001-20000': '€12,001-€20,000',
-        '20001-35000': '€20,001-€35,000',
-        '35001-50000': '€35,001-€50,000',
-        '50001-80000': '€50,001-€80,000',
-        '>80001': 'Over €80,000'
+        "sem-rendimento": "No Income",
+        "<7001": "Up to €7,000",
+        "7001-12000": "€7,001-€12,000",
+        "12001-20000": "€12,001-€20,000",
+        "20001-35000": "€20,001-€35,000",
+        "35001-50000": "€35,001-€50,000",
+        "50001-80000": "€50,001-€80,000",
+        ">80001": "Over €80,000",
     }
 
     # Create a categorical variable for income with proper ordering
-    df['income_category'] = pd.Categorical(
-        df['rendimento-anual'].fillna('Unknown'),
-        categories=income_order + ['Unknown'],
-        ordered=True
+    df["income_category"] = pd.Categorical(
+        df["rendimento-anual"].fillna("Unknown"),
+        categories=income_order + ["Unknown"],
+        ordered=True,
     )
 
     # Interactive filter by satisfaction level
@@ -131,18 +137,30 @@ def show_satisfaction_levels_tab(df):
     with col2:
         selected_income = st.multiselect(
             "Select Income Brackets",
-            options=[income_labels[inc] for inc in income_order if inc in df['rendimento-anual'].unique()],
-            default=[income_labels[inc] for inc in income_order if inc in df['rendimento-anual'].unique()],
-            format_func=lambda x: x
+            options=[
+                income_labels[inc]
+                for inc in income_order
+                if inc in df["rendimento-anual"].unique()
+            ],
+            default=[
+                income_labels[inc]
+                for inc in income_order
+                if inc in df["rendimento-anual"].unique()
+            ],
+            format_func=lambda x: x,
         )
 
         # Convert back to original format for filtering
-        selected_income_original = [key for key, value in income_labels.items() if value in selected_income]
+        selected_income_original = [
+            key for key, value in income_labels.items() if value in selected_income
+        ]
 
     # Apply filters
     if selected_satisfaction and selected_income_original:
-        filtered_df = df[(df["satisfaction_level"].isin(selected_satisfaction)) & 
-                        (df["rendimento-anual"].isin(selected_income_original))]
+        filtered_df = df[
+            (df["satisfaction_level"].isin(selected_satisfaction))
+            & (df["rendimento-anual"].isin(selected_income_original))
+        ]
     elif selected_satisfaction:
         filtered_df = df[df["satisfaction_level"].isin(selected_satisfaction)]
     elif selected_income_original:
@@ -154,15 +172,26 @@ def show_satisfaction_levels_tab(df):
     st.subheader("Income vs. Satisfaction Analysis")
 
     # Create tabs for different visualizations
-    income_tab1, income_tab2, income_tab3 = st.tabs(["Distribution", "Average Satisfaction", "Detailed Analysis"])
+    income_tab1, income_tab2, income_tab3 = st.tabs(
+        ["Distribution", "Average Satisfaction", "Detailed Analysis"]
+    )
 
     with income_tab1:
         # Group by ordered income category for better visualization
-        income_satisfaction = filtered_df.groupby('income_category')['satisfaction_level'].value_counts(normalize=True).mul(100).round(1).unstack().fillna(0)
-        
+        income_satisfaction = (
+            filtered_df.groupby("income_category")["satisfaction_level"]
+            .value_counts(normalize=True)
+            .mul(100)
+            .round(1)
+            .unstack()
+            .fillna(0)
+        )
+
         # Replace category names with more readable versions for the chart
-        income_satisfaction.index = income_satisfaction.index.map(lambda x: income_labels.get(x, x))
-        
+        income_satisfaction.index = income_satisfaction.index.map(
+            lambda x: income_labels.get(x, x)
+        )
+
         fig1 = px.bar(
             income_satisfaction,
             barmode="stack",
@@ -176,7 +205,7 @@ def show_satisfaction_levels_tab(df):
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig1, use_container_width=True)
 
@@ -185,56 +214,72 @@ def show_satisfaction_levels_tab(df):
         filtered_df["satisfaction_score"] = filtered_df["satisfaction_level"].map(
             satisfaction_scores
         )
-        
+
         # Group by income category to maintain proper order
-        avg_satisfaction = filtered_df.groupby("income_category")["satisfaction_score"].mean().reset_index()
+        avg_satisfaction = (
+            filtered_df.groupby("income_category")["satisfaction_score"]
+            .mean()
+            .reset_index()
+        )
         avg_satisfaction.columns = ["Income Bracket", "Average Satisfaction Score"]
-        
+
         # Replace with readable labels
-        avg_satisfaction["Income Bracket"] = avg_satisfaction["Income Bracket"].map(lambda x: income_labels.get(x, x))
-        
+        avg_satisfaction["Income Bracket"] = avg_satisfaction["Income Bracket"].map(
+            lambda x: income_labels.get(x, x)
+        )
+
         fig2 = px.bar(
             avg_satisfaction,
-            x="Income Bracket", 
+            x="Income Bracket",
             y="Average Satisfaction Score",
             title="Average Satisfaction Score by Income Bracket",
             color="Average Satisfaction Score",
-            color_continuous_scale=COLOR_SCALES['sequential'],
-            text_auto='.2f'
+            color_continuous_scale=COLOR_SCALES["sequential"],
+            text_auto=".2f",
         )
         fig2.update_layout(
             height=500,
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig2, use_container_width=True)
-        
+
         # Calculate correlation
-        corr = filtered_df["rendimento_numerical"].corr(filtered_df["satisfaction_score"])
-        
+        corr = filtered_df["rendimento_numerical"].corr(
+            filtered_df["satisfaction_score"]
+        )
+
         st.metric(
-            label="Income-Satisfaction Correlation", 
+            label="Income-Satisfaction Correlation",
             value=f"{corr:.2f}",
             delta=f"{'Positive' if corr > 0 else 'Negative'} correlation",
-            delta_color="normal"
+            delta_color="normal",
         )
 
     with income_tab3:
         # Two columns for detailed analysis
         col1, col2 = st.columns([3, 2])
-        
+
         with col1:
             # Create income groups for visualization
-            filtered_df['income_group'] = pd.cut(
-                filtered_df['rendimento_numerical'],
-                bins=[0, 7000, 12000, 20000, 35000, 50000, 80000, float('inf')],
-                labels=['No/Low Income', '€7K-€12K', '€12K-€20K', '€20K-€35K', '€35K-€50K', '€50K-€80K', 'Over €80K']
+            filtered_df["income_group"] = pd.cut(
+                filtered_df["rendimento_numerical"],
+                bins=[0, 7000, 12000, 20000, 35000, 50000, 80000, float("inf")],
+                labels=[
+                    "No/Low Income",
+                    "€7K-€12K",
+                    "€12K-€20K",
+                    "€20K-€35K",
+                    "€35K-€50K",
+                    "€50K-€80K",
+                    "Over €80K",
+                ],
             )
-            
+
             # Handle NaN values in 'area_numerical' column
-            filtered_df['area_numerical'] = filtered_df['area_numerical'].fillna(0)
+            filtered_df["area_numerical"] = filtered_df["area_numerical"].fillna(0)
 
             # Scatter plot with better grouping and labels
             fig3 = px.scatter(
@@ -248,49 +293,69 @@ def show_satisfaction_levels_tab(df):
                 title="Income vs. Satisfaction (Size = Living Area)",
                 labels={
                     "rendimento_numerical": "Annual Income (€)",
-                    "satisfaction_score": "Satisfaction Score (1-5)"
-                }
+                    "satisfaction_score": "Satisfaction Score (1-5)",
+                },
             )
-            
+
             # Add income group reference lines
             for income_level in [7000, 12000, 20000, 35000, 50000, 80000]:
-                fig3.add_vline(x=income_level, line_dash="dash", line_color="gray", opacity=0.5)
-                
+                fig3.add_vline(
+                    x=income_level, line_dash="dash", line_color="gray", opacity=0.5
+                )
+
             fig3.update_layout(height=450)
             st.plotly_chart(fig3, use_container_width=True)
-        
+
         with col2:
             # Key insights based on the data with improved income grouping
             st.subheader("Key Insights")
-            
+
             # Define income groups for analysis
             income_groups = {
-                'Low Income': filtered_df[filtered_df["rendimento_numerical"] < 12000],
-                'Medium Income': filtered_df[(filtered_df["rendimento_numerical"] >= 12000) & (filtered_df["rendimento_numerical"] < 35000)],
-                'High Income': filtered_df[(filtered_df["rendimento_numerical"] >= 35000) & (filtered_df["rendimento_numerical"] < 80000)],
-                'Very High Income': filtered_df[filtered_df["rendimento_numerical"] >= 80000]
+                "Low Income": filtered_df[filtered_df["rendimento_numerical"] < 12000],
+                "Medium Income": filtered_df[
+                    (filtered_df["rendimento_numerical"] >= 12000)
+                    & (filtered_df["rendimento_numerical"] < 35000)
+                ],
+                "High Income": filtered_df[
+                    (filtered_df["rendimento_numerical"] >= 35000)
+                    & (filtered_df["rendimento_numerical"] < 80000)
+                ],
+                "Very High Income": filtered_df[
+                    filtered_df["rendimento_numerical"] >= 80000
+                ],
             }
-            
+
             # Calculate satisfaction by income group
-            income_group_satisfaction = {group: data["satisfaction_score"].mean() for group, data in income_groups.items() if not data.empty}
-            
+            income_group_satisfaction = {
+                group: data["satisfaction_score"].mean()
+                for group, data in income_groups.items()
+                if not data.empty
+            }
+
             # Calculate by ownership within income groups
             ownership_by_income = {}
             for group, data in income_groups.items():
                 if not data.empty:
-                    owned = data[data["housing_situation"] == "Owned"]["satisfaction_score"].mean()
-                    rented = data[data["housing_situation"] == "Renting"]["satisfaction_score"].mean()
+                    owned = data[data["housing_situation"] == "Owned"][
+                        "satisfaction_score"
+                    ].mean()
+                    rented = data[data["housing_situation"] == "Renting"][
+                        "satisfaction_score"
+                    ].mean()
                     ownership_by_income[group] = (owned, rented)
-            
+
             # Display metrics
             st.markdown("**Satisfaction by Income Group:**")
             for group, score in income_group_satisfaction.items():
                 st.metric(label=group, value=f"{score:.2f}/5")
-            
+
             st.markdown("**Income-Ownership Interaction:**")
             for group, (owned, rented) in ownership_by_income.items():
                 if not (pd.isna(owned) or pd.isna(rented)):
-                    st.markdown(f"**{group}**: Owned {owned:.2f} vs Rented {rented:.2f} (Diff: {owned-rented:.2f})")
+                    st.markdown(
+                        f"**{group}**: Owned {owned:.2f} vs Rented {rented:.2f} (Diff: {owned - rented:.2f})"
+                    )
 
     # Overview of satisfaction by housing situation
     st.subheader("Housing Satisfaction by Situation Type")
@@ -319,7 +384,7 @@ def show_satisfaction_levels_tab(df):
         fig = px.imshow(
             satisfaction_pivot,
             text_auto=True,
-            color_continuous_scale=COLOR_SCALES['sequential'],
+            color_continuous_scale=COLOR_SCALES["sequential"],
             title="Satisfaction Levels by Housing Situation",
             labels={
                 "x": "Satisfaction Level",
@@ -332,7 +397,7 @@ def show_satisfaction_levels_tab(df):
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
 
@@ -348,15 +413,6 @@ def show_satisfaction_levels_tab(df):
         satisfaction_counts = df["satisfaction_level"].value_counts().reset_index()
         satisfaction_counts.columns = ["Satisfaction Level", "Count"]
 
-        # Create color map that matches satisfaction level
-        color_map = {
-            "Very Satisfied": "#1a9850",  # Dark green
-            "Satisfied": "#91cf60",  # Light green
-            "Neutral": "#ffffbf",  # Yellow
-            "Dissatisfied": "#fc8d59",  # Orange
-            "Very Dissatisfied": "#d73027",  # Red
-        }
-
         fig = px.pie(
             satisfaction_counts,
             values="Count",
@@ -369,7 +425,7 @@ def show_satisfaction_levels_tab(df):
             plot_bgcolor=BACKGROUND_COLORS[3],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
 
@@ -441,14 +497,14 @@ def show_satisfaction_levels_tab(df):
         x="Count",
         orientation="h",
         color="Count",
-        color_continuous_scale=COLOR_SCALES['sequential'],
+        color_continuous_scale=COLOR_SCALES["sequential"],
         title="Reasons for Housing Dissatisfaction",
     )
     fig.update_layout(
         plot_bgcolor=BACKGROUND_COLORS[0],
         paper_bgcolor=BACKGROUND_COLORS[3],
         font_color=TEXT_COLORS[2],
-        title_font_color=TEXT_COLORS[0]
+        title_font_color=TEXT_COLORS[0],
     )
     st.plotly_chart(fig)
 
@@ -506,9 +562,7 @@ def show_satisfaction_levels_tab(df):
     )
 
     # Calculate correlation
-    corr = filtered_df["rendimento_numerical"].corr(
-        filtered_df["satisfaction_score"]
-    )
+    corr = filtered_df["rendimento_numerical"].corr(filtered_df["satisfaction_score"])
 
     st.markdown(f"""
     Income-Satisfaction Relationship:
@@ -567,7 +621,7 @@ def show_satisfaction_levels_tab(df):
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
 
@@ -804,15 +858,15 @@ def show_satisfaction_levels_tab(df):
                 score = district_satisfaction_dict[district_name]
                 # Calculate color based on score (-2 to +2)
                 if score < -1.5:
-                    color = SATISFACTION_COLORS['Very Dissatisfied']
+                    color = SATISFACTION_COLORS["Very Dissatisfied"]
                 elif score < -0.5:
-                    color = SATISFACTION_COLORS['Dissatisfied']
+                    color = SATISFACTION_COLORS["Dissatisfied"]
                 elif score < 0.5:
-                    color = SATISFACTION_COLORS['Neutral']
+                    color = SATISFACTION_COLORS["Neutral"]
                 elif score < 1.5:
-                    color = SATISFACTION_COLORS['Satisfied']
+                    color = SATISFACTION_COLORS["Satisfied"]
                 else:
-                    color = SATISFACTION_COLORS['Very Satisfied']
+                    color = SATISFACTION_COLORS["Very Satisfied"]
             except KeyError:
                 color = "#f7f7f7"  # Gray for districts with no data
 

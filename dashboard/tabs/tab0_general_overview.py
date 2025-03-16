@@ -692,7 +692,7 @@ def show_visao_geral_tab(df):
 
     with sim_col:
         # Housing Affordability Simulator
-        st.subheader("Simulador de Acessibilidade Habitacional")
+        st.subheader("Simulador de Acessibilidade Arrendamento")
 
         st.markdown(
             """
@@ -724,9 +724,9 @@ def show_visao_geral_tab(df):
             st.markdown(
                 f"""
             <div class="metric-card" style="height: 180px; display: grid; grid-template-rows: 1fr 1fr 1fr; justify-content: center; align-items: center;">
-                <div class="metric-label">Rendimento Mensal Líquido (€)</div>
-                <div class="metric-value">{monthly_income:.2f}€</div>
-                <div class="metric-label"></div>
+                <div class="metric-label">Média dos Rendimentos Mensais Líquidos</div>
+                <div class="metric-value">{monthly_income:.0f}€</div>
+                <div class="metric-label">incluindo subsídios</div>
             </div>
             """,
                 unsafe_allow_html=True,
@@ -735,9 +735,9 @@ def show_visao_geral_tab(df):
             st.markdown(
                 f"""
             <div class="metric-card" style="height: 180px; display: grid; grid-template-rows: 1fr 1fr 1fr; justify-content: center; align-items: center;">
-                <div class="metric-label">Custo Mensal Recomendado (€)</div>
-                <div class="metric-value">{affordable_housing:.2f}€</div>
-                <div class="metric-label"><30% do rendimento</div>
+                <div class="metric-label">Custo Habitacional Mensal Recomendado</div>
+                <div class="metric-value">{affordable_housing:.0f}€</div>
+                <div class="metric-label">até 30% do rendimento</div>
             </div>
             """,
                 unsafe_allow_html=True,

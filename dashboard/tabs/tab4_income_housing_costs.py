@@ -1,82 +1,98 @@
-#tab4_income_housing_costs.py
+# tab4_income_housing_costs.py
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-import sys
-from pathlib import Path
 
 # Add the parent directory to system path
 sys.path.append(str(Path(__file__).parent.parent))
-from config import *
+from config import (
+    BACKGROUND_COLORS,
+    COLOR_SCALES,
+    HOUSING_COLORS,
+    PRIMARY_COLORS,
+    RENT_BURDEN_COLORS,
+    SECONDARY_COLORS,
+    TEXT_COLORS,
+)
 
 
 def show_income_housing_costs_tab(df):
     """
     Este separador analisa detalhadamente a relação entre rendimento e custos habitacionais, focando-se em:
-    
+
     - Análise da sobrecarga de renda e sua distribuição entre diferentes segmentos
     - Comparação entre rendimento e custos habitacionais para proprietários e arrendatários
     - Tendências de acessibilidade de rendas ao longo do tempo
     - Simulador interativo para calcular custos habitacionais acessíveis com base no rendimento
     - Comparação com valores médios de mercado em diferentes distritos
-    
-    As visualizações utilizam uma combinação de gráficos circulares, de dispersão, de barras e lineares 
+
+    As visualizações utilizam uma combinação de gráficos circulares, de dispersão, de barras e lineares
     para destacar os padrões de acessibilidade habitacional em Portugal.
     """
     st.header("Análise de Rendimento vs Custos Habitacionais")
-    
+
     # Introdução com estilo melhorado
-    st.markdown("""
+    st.markdown(
+        """
     <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; margin-bottom: 20px;">
     <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
     <p>Esta secção analisa a relação entre os rendimentos e os custos habitacionais em Portugal, destacando questões 
     de acessibilidade e sobrecarga financeira.</p>
     <ul>
-      <li><strong>Tendências Principais:</strong> Existe uma significativa disparidade na proporção do rendimento gasto em habitação entre diferentes grupos</li>
-      <li><strong>Sobrecarga Habitacional:</strong> Uma percentagem considerável de portugueses gasta mais de 30% do seu rendimento em custos habitacionais</li>
-      <li><strong>Variação Regional:</strong> A acessibilidade habitacional varia significativamente entre distritos</li>
+        <li><strong>Tendências Principais:</strong> Existe uma significativa disparidade na proporção do rendimento gasto em habitação entre diferentes grupos</li>
+        <li><strong>Sobrecarga Habitacional:</strong> Uma percentagem considerável de portugueses gasta mais de 30% do seu rendimento em custos habitacionais</li>
+        <li><strong>Variação Regional:</strong> A acessibilidade habitacional varia significativamente entre distritos</li>
     </ul>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Calcular algumas estatísticas para as métricas rápidas
     rent_data = df[df["housing_situation"] == "Renting"]
-    
+
     # Calcular percentagem de inquiridos com sobrecarga alta
-    high_burden_count = rent_data[rent_data["rent_burden"].isin(["51-80% (High)", ">80% (Very High)"])].shape[0]
-    high_burden_pct = (high_burden_count / rent_data.shape[0] * 100) if not rent_data.empty else 0
-    
+    high_burden_count = rent_data[
+        rent_data["rent_burden"].isin(["51-80% (High)", ">80% (Very High)"])
+    ].shape[0]
+    high_burden_pct = (
+        (high_burden_count / rent_data.shape[0] * 100) if not rent_data.empty else 0
+    )
+
     # Calcular renda média
     avg_rent = rent_data["valor-mensal-renda"].mean() if not rent_data.empty else 0
-    
+
     # Calcular valor médio de compra
     owned_data = df[df["housing_situation"] == "Owned"]
     avg_purchase = owned_data["valor-compra"].mean() if not owned_data.empty else 0
-    
+
     # Criar 3 colunas para métricas rápidas
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         st.metric(
             label="Sobrecarga Habitacional",
             value=f"{high_burden_pct:.1f}%",
-            help="Percentagem de arrendatários que gastam mais de 50% do rendimento em habitação"
+            help="Percentagem de arrendatários que gastam mais de 50% do rendimento em habitação",
         )
-    
+
     with col2:
         st.metric(
             label="Renda Média Mensal",
             value=f"{avg_rent:.2f} €",
-            help="Valor médio de renda mensal para arrendatários"
+            help="Valor médio de renda mensal para arrendatários",
         )
-    
+
     with col3:
         st.metric(
             label="Preço Médio de Compra",
             value=f"{avg_purchase:.2f} €",
-            help="Valor médio de compra para proprietários"
+            help="Valor médio de compra para proprietários",
         )
 
     # Análise de sobrecarga de renda
@@ -91,22 +107,22 @@ def show_income_housing_costs_tab(df):
     with col1:
         # Traduzir categorias de sobrecarga de renda
         burden_mapping = {
-            '≤30% (Affordable)': '≤30% (Acessível)',
-            '31-50% (Moderate)': '31-50% (Moderada)',
-            '51-80% (High)': '51-80% (Alta)',
-            '>80% (Very High)': '>80% (Muito Alta)',
-            'Unknown': 'Desconhecida'
+            "≤30% (Affordable)": "≤30% (Acessível)",
+            "31-50% (Moderate)": "31-50% (Moderada)",
+            "51-80% (High)": "51-80% (Alta)",
+            ">80% (Very High)": ">80% (Muito Alta)",
+            "Unknown": "Desconhecida",
         }
-        
+
         # Criar gráfico circular das categorias de sobrecarga de renda
         if not rent_data.empty:
             rent_burden_counts = rent_data["rent_burden"].value_counts().reset_index()
             rent_burden_counts.columns = ["Sobrecarga de Renda", "Contagem"]
-            
+
             # Mapear categorias para português
-            rent_burden_counts["Sobrecarga de Renda"] = rent_burden_counts["Sobrecarga de Renda"].map(
-                burden_mapping
-            )
+            rent_burden_counts["Sobrecarga de Renda"] = rent_burden_counts[
+                "Sobrecarga de Renda"
+            ].map(burden_mapping)
 
             fig = px.pie(
                 rent_burden_counts,
@@ -114,11 +130,11 @@ def show_income_housing_costs_tab(df):
                 names="Sobrecarga de Renda",
                 color="Sobrecarga de Renda",
                 color_discrete_map={
-                    '≤30% (Acessível)': RENT_BURDEN_COLORS['≤30% (Affordable)'],
-                    '31-50% (Moderada)': RENT_BURDEN_COLORS['31-50% (Moderate)'],
-                    '51-80% (Alta)': RENT_BURDEN_COLORS['51-80% (High)'],
-                    '>80% (Muito Alta)': RENT_BURDEN_COLORS['>80% (Very High)'],
-                    'Desconhecida': RENT_BURDEN_COLORS['Unknown']
+                    "≤30% (Acessível)": RENT_BURDEN_COLORS["≤30% (Affordable)"],
+                    "31-50% (Moderada)": RENT_BURDEN_COLORS["31-50% (Moderate)"],
+                    "51-80% (Alta)": RENT_BURDEN_COLORS["51-80% (High)"],
+                    ">80% (Muito Alta)": RENT_BURDEN_COLORS[">80% (Very High)"],
+                    "Desconhecida": RENT_BURDEN_COLORS["Unknown"],
                 },
                 title="Distribuição de Categorias de Sobrecarga de Renda",
             )
@@ -126,7 +142,7 @@ def show_income_housing_costs_tab(df):
                 plot_bgcolor=BACKGROUND_COLORS[0],
                 paper_bgcolor=BACKGROUND_COLORS[3],
                 font_color=TEXT_COLORS[2],
-                title_font_color=TEXT_COLORS[0]
+                title_font_color=TEXT_COLORS[0],
             )
             st.plotly_chart(fig)
 
@@ -140,7 +156,9 @@ def show_income_housing_costs_tab(df):
 
             # Mapear sobrecarga para português
             rent_data_pt = rent_data.copy()
-            rent_data_pt["sobrecarga_renda"] = rent_data_pt["rent_burden"].map(burden_mapping)
+            rent_data_pt["sobrecarga_renda"] = rent_data_pt["rent_burden"].map(
+                burden_mapping
+            )
 
             rent_data_pt = rent_data_pt.dropna(subset=["percentagem-renda-paga"])
             fig = px.scatter(
@@ -149,11 +167,11 @@ def show_income_housing_costs_tab(df):
                 y="valor-mensal-renda",
                 color="sobrecarga_renda",
                 color_discrete_map={
-                    '≤30% (Acessível)': RENT_BURDEN_COLORS['≤30% (Affordable)'],
-                    '31-50% (Moderada)': RENT_BURDEN_COLORS['31-50% (Moderate)'],
-                    '51-80% (Alta)': RENT_BURDEN_COLORS['51-80% (High)'],
-                    '>80% (Muito Alta)': RENT_BURDEN_COLORS['>80% (Very High)'],
-                    'Desconhecida': RENT_BURDEN_COLORS['Unknown']
+                    "≤30% (Acessível)": RENT_BURDEN_COLORS["≤30% (Affordable)"],
+                    "31-50% (Moderada)": RENT_BURDEN_COLORS["31-50% (Moderate)"],
+                    "51-80% (Alta)": RENT_BURDEN_COLORS["51-80% (High)"],
+                    ">80% (Muito Alta)": RENT_BURDEN_COLORS[">80% (Very High)"],
+                    "Desconhecida": RENT_BURDEN_COLORS["Unknown"],
                 },
                 size=rent_data_pt["percentagem-renda-paga"].tolist(),
                 hover_data=["distrito", "percentagem-renda-paga"],
@@ -168,7 +186,7 @@ def show_income_housing_costs_tab(df):
                 plot_bgcolor=BACKGROUND_COLORS[0],
                 paper_bgcolor=BACKGROUND_COLORS[3],
                 font_color=TEXT_COLORS[2],
-                title_font_color=TEXT_COLORS[0]
+                title_font_color=TEXT_COLORS[0],
             )
 
             # Adicionar linha de referência para rácio renda-rendimento de 30%
@@ -205,15 +223,15 @@ def show_income_housing_costs_tab(df):
     with col1:
         # Traduzir situações habitacionais
         housing_mapping = {
-            'Renting': 'Arrendamento',
-            'Owned': 'Propriedade',
-            'Living with others': 'A viver com outros'
+            "Renting": "Arrendamento",
+            "Owned": "Propriedade",
+            "Living with others": "A viver com outros",
         }
-        
+
         # Aplicar mapeamento
         df_pt = df.copy()
-        df_pt['situacao_habitacional'] = df_pt['housing_situation'].map(housing_mapping)
-        
+        df_pt["situacao_habitacional"] = df_pt["housing_situation"].map(housing_mapping)
+
         # Gráfico de caixa de rendimento por situação habitacional
         fig = px.box(
             df_pt,
@@ -221,9 +239,9 @@ def show_income_housing_costs_tab(df):
             y="rendimento_numerical",
             color="situacao_habitacional",
             color_discrete_map={
-                'Arrendamento': HOUSING_COLORS['Renting'],
-                'Propriedade': HOUSING_COLORS['Owned'],
-                'A viver com outros': HOUSING_COLORS['Living with others']
+                "Arrendamento": HOUSING_COLORS["Renting"],
+                "Propriedade": HOUSING_COLORS["Owned"],
+                "A viver com outros": HOUSING_COLORS["Living with others"],
             },
             title="Distribuição de Rendimento por Situação Habitacional",
             labels={
@@ -235,7 +253,7 @@ def show_income_housing_costs_tab(df):
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
 
@@ -283,9 +301,11 @@ def show_income_housing_costs_tab(df):
             bins=[0, 30, 50, 80, float("inf")],
             labels=["≤30%", "31-50%", "51-80%", ">80%"],
         )
-        
+
         # Traduzir situações habitacionais
-        housing_cost_data['situacao_habitacional'] = housing_cost_data['housing_situation'].map(housing_mapping)
+        housing_cost_data["situacao_habitacional"] = housing_cost_data[
+            "housing_situation"
+        ].map(housing_mapping)
 
         # Gráfico de barras de rácio custo habitacional para rendimento por situação
         cost_ratio_pivot = pd.crosstab(
@@ -310,13 +330,13 @@ def show_income_housing_costs_tab(df):
                 "situacao_habitacional": "Situação Habitacional",
                 "Contagem": "Número de Inquiridos",
             },
-            color_discrete_sequence=COLOR_SCALES['sequential'],
+            color_discrete_sequence=COLOR_SCALES["sequential"],
         )
         fig.update_layout(
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
 
@@ -354,13 +374,13 @@ def show_income_housing_costs_tab(df):
                 "rental_year": "Ano de Início do Arrendamento",
                 "valor-mensal-renda": "Renda Média Mensal (€)",
             },
-            color_discrete_sequence=[PRIMARY_COLORS[0]]
+            color_discrete_sequence=[PRIMARY_COLORS[0]],
         )
         fig.update_layout(
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
 
@@ -389,12 +409,12 @@ def show_income_housing_costs_tab(df):
                 "rental_year": "Ano de Início do Arrendamento",
                 "rent_income_ratio": "Rácio Renda/Rendimento (%)",
             },
-            color_discrete_sequence=[SECONDARY_COLORS[0]]
+            color_discrete_sequence=[SECONDARY_COLORS[0]],
         )
         fig.add_hline(
             y=30,
             line_dash="dash",
-            line_color=RENT_BURDEN_COLORS['≤30% (Affordable)'],
+            line_color=RENT_BURDEN_COLORS["≤30% (Affordable)"],
             annotation_text="Limiar de Acessibilidade 30%",
             annotation_position="bottom right",
         )
@@ -402,12 +422,12 @@ def show_income_housing_costs_tab(df):
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
 
-    # Simulador interativo de acessibilidade
-    st.subheader("Simulador de Acessibilidade Habitacional")
+    # Simulador interativo de acessibilidade de arrendamento
+    st.subheader("Simulador de Acessibilidade Arrendamento")
     st.markdown("""
     Utilize este simulador para calcular quais os custos habitacionais que seriam acessíveis com base em diferentes níveis de rendimento.
     O calculador utiliza a regra dos 30%: os custos habitacionais não devem exceder 30% do rendimento mensal bruto.
@@ -417,7 +437,11 @@ def show_income_housing_costs_tab(df):
 
     with col1:
         income_input = st.number_input(
-            "Rendimento Anual (€)", min_value=0, max_value=200000, value=30000, step=1000
+            "Rendimento Anual (€)",
+            min_value=0,
+            max_value=200000,
+            value=18000,
+            step=1000,
         )
 
     with col2:
@@ -460,14 +484,14 @@ def show_income_housing_costs_tab(df):
             y="Renda Média",
             title="Renda Média por Distrito",
             labels={"Renda Média": "Renda Média Mensal (€)"},
-            color_discrete_sequence=[PRIMARY_COLORS[0]]
+            color_discrete_sequence=[PRIMARY_COLORS[0]],
         )
 
         # Adicionar linha para renda acessível com base no input
         fig.add_hline(
             y=affordable_housing,
             line_dash="dash",
-            line_color=RENT_BURDEN_COLORS['≤30% (Affordable)'],
+            line_color=RENT_BURDEN_COLORS["≤30% (Affordable)"],
             annotation_text="Sua Renda Acessível",
             annotation_position="top right",
         )
@@ -476,7 +500,7 @@ def show_income_housing_costs_tab(df):
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
 
@@ -499,9 +523,13 @@ def show_income_housing_costs_tab(df):
             y="Índice de Acessibilidade",
             color="Acessível",
             title="Índice de Acessibilidade Habitacional por Distrito",
-            labels={"Índice de Acessibilidade": "Índice de Acessibilidade (>1 é acessível)"},
-            color_discrete_map={True: RENT_BURDEN_COLORS['≤30% (Affordable)'], 
-                              False: RENT_BURDEN_COLORS['>80% (Very High)']},
+            labels={
+                "Índice de Acessibilidade": "Índice de Acessibilidade (>1 é acessível)"
+            },
+            color_discrete_map={
+                True: RENT_BURDEN_COLORS["≤30% (Affordable)"],
+                False: RENT_BURDEN_COLORS[">80% (Very High)"],
+            },
         )
         fig.add_hline(
             y=1,
@@ -514,10 +542,10 @@ def show_income_housing_costs_tab(df):
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
             font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
+            title_font_color=TEXT_COLORS[0],
         )
         st.plotly_chart(fig)
-        
+
     # Adicionar insights finais
     st.markdown("""
     **Insights-Chave sobre Acessibilidade Habitacional:**
