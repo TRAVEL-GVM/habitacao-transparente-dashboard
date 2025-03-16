@@ -12,22 +12,26 @@ from config import *
 
 def show_housing_distribution_tab(df):
     """
-    Display the Housing Distribution tab with enhanced visualizations, insights, and filters.
+    Apresenta a distribuição das situações habitacionais em Portugal com visualizações aprimoradas, insights e filtros.
 
-    Parameters:
-    df (DataFrame): The processed housing data
+    Parâmetros:
+    df (DataFrame): Os dados habitacionais processados
     """
-    st.header("Housing Situation Distribution")
+    st.header("Distribuição de Situações Habitacionais")
 
-    # Overview explanation
+    # Introdução com estilo melhorado
     st.markdown("""
-    This section analyzes how Portuguese residents are distributed across different housing situations:
-    - **Renting**: People who rent their homes
-    - **Owned**: People who own their homes through purchase or inheritance
-    - **Living with others**: People living with family or in shared accommodations
-    
-    The charts below show the overall distribution and how housing situations differ across age groups.
-    """)
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32;">
+    <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
+    <p>Esta secção analisa como os residentes portugueses estão distribuídos em diferentes situações habitacionais,
+    revelando padrões complexos de posse, arrendamento e arranjos de vida compartilhada.</p>
+    <ul>
+      <li><strong>Situações Habitacionais:</strong> Arrendamento, Propriedade e Vivendo com Outros</li>
+      <li><strong>Tendências Principais:</strong> Variações significativas nas situações habitacionais entre diferentes grupos etários</li>
+      <li><strong>Análise Detalhada:</strong> Distribuição e fatores que influenciam as escolhas habitacionais em Portugal</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2 = st.columns([1, 1])
 
