@@ -9,6 +9,7 @@ from tabs.tab3_satisfaction_levels import show_satisfaction_levels_tab
 from tabs.tab4_income_housing_costs import show_income_housing_costs_tab
 from tabs.tab5_education_employment import show_education_employment_tab
 from tabs.tab6_housing_types_sizes import show_housing_types_sizes_tab
+from tabs.tab7_exploratory_analysis import show_exploratory_analysis_tab
 
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Dashboard do Habitação Transparente")
@@ -212,14 +213,15 @@ geographic distribution, satisfaction levels, and financial aspects.
 """)
 
 # Create tabs for different insights
-tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab0, tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "General Overview",
     "Housing Distribution", 
     "Geographic Analysis", 
     "Satisfaction Levels", 
     "Income vs Housing Costs",
     "Education & Employment",
-    "Housing Types & Sizes"
+    "Housing Types & Sizes",
+    "Exploratory Data Analysis"
 ])
 
 with tab0:
@@ -242,3 +244,6 @@ with tab5:
 
 with tab6:
     show_housing_types_sizes_tab(df)
+    
+with tab7:
+    show_exploratory_analysis_tab(df)
