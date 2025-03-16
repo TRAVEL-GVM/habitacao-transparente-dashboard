@@ -31,15 +31,55 @@ def show_satisfaction_levels_tab(df):
     Parameters:
     df (DataFrame): The processed housing data
     """
-    st.header("Housing Satisfaction Analysis")
-
-    # Introduction text
-    st.markdown("""
-    This tab provides an in-depth analysis of housing satisfaction across Portugal. 
-    Housing satisfaction is a critical metric that reflects the quality of life and housing adequacy.
-    The analysis examines various factors influencing satisfaction levels, helping to identify areas for improvement.
-    """)
+    st.header("Análise de Níveis de Satisfação Habitacional")
     
+    # Introdução com estilo melhorado
+    st.markdown("""
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32;">
+    <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
+    <p>Esta secção fornece uma análise aprofundada dos níveis de satisfação habitacional em Portugal, 
+    explorando como diferentes fatores socioeconómicos influenciam a perceção da qualidade habitacional.</p>
+    <ul>
+      <li><strong>Tendências Principais:</strong> Existe uma variação significativa na satisfação habitacional entre diferentes grupos demográficos</li>
+      <li><strong>Fatores de Influência:</strong> Rendimento, localização, tipo de habitação e situação profissional impactam diretamente a satisfação</li>
+      <li><strong>Desafios Identificados:</strong> Altos custos habitacionais e inadequação do espaço são grandes contribuintes para a insatisfação</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Métricas principais
+    # Calcular algumas estatísticas para as métricas rápidas
+    total_responses = len(df)
+    
+    # Calcular percentagem de níveis de satisfação
+    satisfaction_counts = df['satisfaction_level'].value_counts(normalize=True) * 100
+    
+    satisfied_pct = satisfaction_counts.get('Very Satisfied', 0) + satisfaction_counts.get('Satisfied', 0)
+    dissatisfied_pct = satisfaction_counts.get('Very Dissatisfied', 0) + satisfaction_counts.get('Dissatisfied', 0)
+    
+    # Criar 3 colunas para métricas rápidas
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            label="Total de Respostas",
+            value=total_responses,
+            help="Número total de respostas no inquérito"
+        )
+    
+    with col2:
+        st.metric(
+            label="Taxa de Satisfação",
+            value=f"{satisfied_pct:.1f}%",
+            help="Percentagem de respostas 'Satisfeito' ou 'Muito Satisfeito'"
+        )
+    
+    with col3:
+        st.metric(
+            label="Taxa de Insatisfação",
+            value=f"{dissatisfied_pct:.1f}%",
+            help="Percentagem de respostas 'Insatisfeito' ou 'Muito Insatisfeito'"
+        )
     # Define better income bracket ordering and visualization
     income_order = [
         'sem-rendimento', 
