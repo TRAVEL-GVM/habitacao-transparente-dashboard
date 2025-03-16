@@ -49,6 +49,7 @@ def show_visao_geral_tab(df):
         background-color: #e8f5e9;
         border-radius: 10px;
         padding: 15px;
+        margin: 5px 0px 5px 0px;
         text-align: center;
         justify-content: center;
         height: 100%;
@@ -206,10 +207,10 @@ def show_visao_geral_tab(df):
     # Income input
     income_input = st.slider(
         "Rendimento Anual (€)",
-        min_value=10000,
+        min_value=1000,
         max_value=100000,
-        value=30000,
-        step=1000,
+        value=15000,
+        step=100,
         format="€%d",
     )
 
@@ -323,21 +324,6 @@ def show_visao_geral_tab(df):
                 tiles="CartoDB Positron",
                 control_scale=True,
             )
-
-            # Add title to the map
-            title_html = """
-                <div style="position: fixed; 
-                            top: 10px; left: 50px; width: 300px; height: 30px; 
-                            background-color: rgba(255, 255, 255, 0.8);
-                            border-radius: 5px; 
-                            font-size: 16pt; font-weight: bold;
-                            text-align: center;
-                            padding: 5px;
-                            z-index: 9999;">
-                    Satisfação Habitacional em Portugal
-                </div>
-                """
-            m.get_root().html.add_child(folium.Element(title_html))
 
             # Style function for the GeoJSON
             def style_function(feature):
@@ -569,7 +555,7 @@ def show_visao_geral_tab(df):
             ).add_to(m)
 
             # Display the map
-            folium_static(m)
+            folium_static(m, width=2000, height=500)
 
         except Exception as e:
             st.error(f"Error loading or processing the map: {e}")
@@ -582,6 +568,7 @@ def show_visao_geral_tab(df):
                 ["All"] + sorted(df["distrito"].unique().tolist()),
                 index=0,
             )
+            
         # Note for users about the map
         st.markdown(
             """
@@ -593,9 +580,7 @@ def show_visao_geral_tab(df):
         )
 
     with kpi_col:
-        st.text("")
         # District selection without form - use selectbox instead
-        st.write("Selecione um distrito:")
         st.session_state.selected_district = st.selectbox(
             "Selecione um distrito",
             ["All"] + sorted([d.capitalize() for d in district_mapping.keys()]),
@@ -714,5 +699,3 @@ def show_visao_geral_tab(df):
             unsafe_allow_html=True,
         )
 
-        # Close the main container
-        st.markdown("</div>", unsafe_allow_html=True)
