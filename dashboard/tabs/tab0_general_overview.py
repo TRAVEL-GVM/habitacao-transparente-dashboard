@@ -110,16 +110,7 @@ def show_visao_geral_tab(df):
     )
 
     st.header("Visão Geral da Habitação em Portugal")
-    st.markdown(
-        """
-        <div class="info-card">
-            Uma análise das condições habitacionais em Portugal. 
-            O índice de satisfação demonstra uma avaliação moderadamente positiva das condições
-            habitacionais em Portugal.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
