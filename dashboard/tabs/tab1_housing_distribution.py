@@ -51,7 +51,7 @@ def show_housing_distribution_tab(df):
             names="Housing Situation",
             color="Housing Situation",
             color_discrete_map=HOUSING_COLORS,
-            title="Distribution of Housing Situations",
+            title="Distribuição das Situações Habitacionais",
             hover_data=["Percentage"],
         )
         fig.update_traces(textinfo="percent+label")
@@ -68,13 +68,13 @@ def show_housing_distribution_tab(df):
             "Housing Situation"
         ]
         st.markdown(f"""
-        **Key Insights:**
-        - {dominant_situation} is the most common housing situation in Portugal
-        - {housing_counts.iloc[housing_counts["Count"].argmax()]["Percentage"]} of respondents {dominant_situation.lower() if dominant_situation != "Living with others" else "are living with others"}
+        **Principais Conclusões:**
+        - {dominant_situation} é a situação habitacional mais comum em Portugal
+        - {housing_counts.iloc[housing_counts["Count"].argmax()]["Percentage"]} dos inquiridos encontram-se em {dominant_situation.lower() if dominant_situation != "Living with others" else "vivem com outros"}
         """)
 
     with col2:
-        st.subheader("Housing Situation by Age Group")
+        st.subheader("Situação Habitacional por Faixa Etária")
         # Extract birth year range for age groups and improve labeling
         df["birth_period"] = df["ano_nascimento_interval"].str.extract(r"\[(\d+)")
         df["birth_period"] = pd.to_numeric(df["birth_period"], errors="coerce")
@@ -113,14 +113,14 @@ def show_housing_distribution_tab(df):
             y="Percentage",
             color="Housing Situation",
             color_discrete_map=HOUSING_COLORS,  # Use consistent housing colors
-            title="Housing Situation by Birth Decade",
+            title="Situação Habitacional por Década de Nascimento",
             labels={
-                "age_group": "Birth Decade (Age Range)",
-                "Percentage": "Percentage (%)",
+                "age_group": "Década de Nascimento (Intervalo Etário)",
+                "Percentage": "Percentagem (%)",
             },
         )
         fig.update_layout(
-            xaxis_title="Birth Decade (Approximate Age Range)",
+            xaxis_title="Década de Nascimento (Intervalo Etário Aproximado)",
             plot_bgcolor=BACKGROUND_COLORS[0],    # Light green background
             paper_bgcolor=BACKGROUND_COLORS[3],   # White paper
             font_color=TEXT_COLORS[2],           # Medium green text
@@ -139,60 +139,66 @@ def show_housing_distribution_tab(df):
 
         # Add insights about generational differences
         st.markdown("""
-        **Generational Trends:**
-        - Younger generations (born in 1990s-2000s) show higher rates of renting and living with others
-        - Home ownership increases significantly with age, peaking in the older generations
-        - These patterns reflect changing economic conditions and housing affordability challenges facing younger Portuguese citizens
+        **Tendências Geracionais:**
+        - As gerações mais novas (nascidas entre os anos 1990-2000) apresentam taxas mais elevadas de arrendamento e de viver com outros
+        - A propriedade aumenta significativamente com a idade, atingindo o pico nas gerações mais velhas
+        - Estes padrões refletem as condições económicas e os desafios de acessibilidade à habitação enfrentados pelos portugueses mais jovens
         """)
 
     # Housing situation filters - now with more context
-    st.subheader("Explore Housing Situations in Detail")
+    st.subheader("Explorar Situações Habitacionais em Detalhe")
     st.markdown("""
-    Select a specific housing situation below to explore detailed metrics and patterns within that group.
-    This allows for deeper analysis of factors affecting different housing situations.
+    Selecione uma situação habitacional específica abaixo para explorar métricas e padrões detalhados dentro desse grupo.
+    Isto permite uma análise mais profunda dos fatores que afetam as diferentes situações habitacionais.
     """)
 
+    # Adiciona mapeamento entre os rótulos em português e os valores dos dados
+    map_housing = {
+        "Arrendamento": "Renting",
+        "Própria": "Owned",
+        "Vivendo com outros": "Living with others"
+    }
     selected_situation = st.selectbox(
-        "Select Housing Situation to Explore",
-        options=["Renting", "Owned", "Living with others", "All"]
+        "Selecione a Situação Habitacional a Explorar",
+        options=list(map_housing.keys()) + ["Todas"]
     )
 
-    if selected_situation != "All":
-        filtered_df = df[df["housing_situation"] == selected_situation]
+    if selected_situation != "Todas":
+        filtered_df = df[df["housing_situation"] == map_housing[selected_situation]]
     else:
         filtered_df = df
 
     # Display enhanced statistics based on filter
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Total Count", len(filtered_df))
+        st.metric("Contagem Total", len(filtered_df))
     with col2:
         avg_birth = filtered_df["birth_period"].mean()
         if not pd.isna(avg_birth):
-            st.metric("Average Birth Year", f"{avg_birth:.0f}")
-            st.caption(f"Approx. Age: {2025 - avg_birth:.0f}")
+            st.metric("Ano de Nascimento Médio", f"{avg_birth:.0f}")
+            st.caption(f"Idade Aproximada: {2025 - avg_birth:.0f}")
     with col3:
-        if selected_situation == "Renting":
+        if selected_situation == "Arrendamento":
             avg_rent = filtered_df["valor-mensal-renda"].mean()
             if not pd.isna(avg_rent):
-                st.metric("Average Monthly Rent", f"€{avg_rent:.2f}")
-        elif selected_situation == "Owned":
+                st.metric("Renda Mensal Média", f"€{avg_rent:.2f}")
+        elif selected_situation == "Própria":
             avg_price = filtered_df["valor-compra"].mean()
             if not pd.isna(avg_price):
-                st.metric("Average Purchase Price", f"€{avg_price:.2f}")
+                st.metric("Preço Médio de Compra", f"€{avg_price:.2f}")
     with col4:
-        if selected_situation != "All":
+        if selected_situation != "Todas":
             try:
                 # Average area for the selected housing situation
                 avg_area = filtered_df["area_numerical"].mean()
                 if not pd.isna(avg_area):
-                    st.metric("Average Living Area", f"{avg_area:.0f} m²")
+                    st.metric("Área Média de Habitação", f"{avg_area:.0f} m²")
             except Exception:
                 pass
 
     # Additional visualization for the selected housing situation
-    if selected_situation != "All":
-        st.subheader(f"{selected_situation} - Education Level Distribution")
+    if selected_situation != "Todas":
+        st.subheader(f"{selected_situation} - Distribuição do Nível de Educação")
 
         # Create education level distribution visualization
         edu_counts = filtered_df["education_level"].value_counts().reset_index()
@@ -218,7 +224,7 @@ def show_housing_distribution_tab(df):
             y="Count",
             color="Education Level",
             color_discrete_sequence=PRIMARY_COLORS,  # Use primary color palette
-            title=f"Education Level Distribution for {selected_situation}",
+            title=f"Distribuição do Nível de Educação para {selected_situation}",
         )
         fig.update_layout(
             plot_bgcolor=BACKGROUND_COLORS[0],
@@ -228,14 +234,13 @@ def show_housing_distribution_tab(df):
         st.plotly_chart(fig)
 
         st.markdown(f"""
-        This chart shows the education level distribution among people in the "{selected_situation}" housing situation.
-        Education level can significantly influence housing choices and opportunities due to its impact on income potential
-        and financial stability.
+        Este gráfico mostra a distribuição do nível de educação entre as pessoas na situação habitacional "{selected_situation}".
+        O nível de educação pode influenciar significativamente as escolhas de habitação e as oportunidades, devido ao seu impacto no potencial de rendimento e na estabilidade financeira.
         """)
 
         # Display financial metrics if available for the housing situation
-        if selected_situation == "Renting":
-            st.subheader("Rent Burden Analysis")
+        if selected_situation == "Arrendamento":
+            st.subheader("Análise do Peso da Renda")
 
             # Create donut chart for rent burden categories
             rent_burden_counts = filtered_df["rent_burden"].value_counts().reset_index()
@@ -245,7 +250,7 @@ def show_housing_distribution_tab(df):
                 rent_burden_counts,
                 values="Count",
                 names="Rent Burden",
-                title="Distribution of Rent Burden",
+                title="Distribuição do Peso da Renda",
                 hole=0.4,
                 color="Rent Burden",
                 color_discrete_map=RENT_BURDEN_COLORS,
@@ -253,11 +258,11 @@ def show_housing_distribution_tab(df):
             st.plotly_chart(fig)
 
             st.markdown("""
-            **Rent Burden Explanation:**
-            - **≤30% (Affordable)**: Housing costs are generally considered affordable when they consume no more than 30% of household income
-            - **31-50% (Moderate)**: These households face some financial pressure from housing costs
-            - **51-80% (High)**: Housing costs create significant financial strain
-            - **>80% (Very High)**: Extreme financial pressure from housing costs
+            **Explicação do Peso da Renda:**
+            - **≤30% (Acessível)**: Os custos de habitação são geralmente considerados acessíveis quando não ultrapassam os 30% do rendimento familiar
+            - **31-50% (Moderado)**: Estes domicílios enfrentam alguma pressão financeira devido aos custos de habitação
+            - **51-80% (Elevado)**: Os custos de habitação criam uma pressão financeira significativa
+            - **>80% (Muito Elevado)**: Pressão financeira extrema devido aos custos de habitação
             
-            Higher rent burdens often lead to reduced spending on other necessities and difficulty saving for the future.
+            Pesos de renda mais elevados frequentemente levam a uma redução dos gastos noutras necessidades e à dificuldade em poupar para o futuro.
             """)
