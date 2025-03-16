@@ -111,7 +111,6 @@ def show_visao_geral_tab(df):
 
     st.header("Visão Geral da Habitação em Portugal")
 
-
     col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
@@ -182,71 +181,11 @@ def show_visao_geral_tab(df):
         unsafe_allow_html=True,
     )
 
-    # Housing Affordability Simulator
-    st.subheader("Simulador de Acessibilidade Habitacional")
-
-    st.markdown(
-        """
-    <div class="info-card">
-        Calcule quanto pode gastar em habitação com base no seu rendimento anual.
-        A regra geral é que as despesas com habitação não devem exceder 30% do rendimento bruto mensal.
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    # Income input
-    income_input = st.slider(
-        "Rendimento Anual (€)",
-        min_value=1000,
-        max_value=100000,
-        value=15000,
-        step=100,
-        format="€%d",
-    )
-
-    # Calculate affordability
-    monthly_income = income_input / 12
-    affordable_housing = monthly_income * 0.3
-
-    # Display results with enhanced styling
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(
-            f"""
-        <div class="metric-card" style="height: 150px;">
-            <div class="metric-label">Rendimento Mensal (€)</div>
-            <div class="metric-value">{monthly_income:.2f}</div>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
-    with col2:
-        st.markdown(
-            f"""
-        <div class="metric-card" style="height: 150px;">
-            <div class="metric-label">Custo Habitacional Mensal Recomendado (€)</div>
-            <div class="metric-value">{affordable_housing:.2f}</div>
-            <div class="metric-label">>30% do rendimento</div>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
-
-    # Add another section divider
-    st.markdown('<div class="section-divider-space"></div>', unsafe_allow_html=True)
-
-    # Interactive Map and KPI Section with enhanced header
-    st.subheader("Análise Geográfica e Indicadores")
-
-    # Create two columns: map and KPIs
-    map_col, kpi_col = st.columns([6, 4])
-
-    # Initialize session state for selected district
-    if "selected_district" not in st.session_state:
-        st.session_state.selected_district = "All"
+    # Create 3 columns: map, KPIs, and affordability simulator
+    map_col, kpi_col, sim_col = st.columns([4, 4, 4])
 
     with map_col:
+        st.subheader("Mapa de Indicadores por Distrito")
         # Calculate satisfaction score by district
         district_satisfaction = (
             df.groupby("distrito")["satisfaction_score"]
@@ -546,20 +485,14 @@ def show_visao_geral_tab(df):
             ).add_to(m)
 
             # Display the map
-            folium_static(m, width=2000, height=500)
+            folium_static(m, width=2000, height=400)
 
         except Exception as e:
             st.error(f"Error loading or processing the map: {e}")
             st.info(
                 "Please ensure the GeoJSON file 'distrito_all_s.geojson' is available in the application directory."
             )
-            # Fallback district selector
-            st.session_state.selected_district = st.selectbox(
-                "Selecione um distrito",
-                ["All"] + sorted(df["distrito"].unique().tolist()),
-                index=0,
-            )
-            
+
         # Note for users about the map
         st.markdown(
             """
@@ -571,64 +504,78 @@ def show_visao_geral_tab(df):
         )
 
     with kpi_col:
-        # District selection without form - use selectbox instead
-        st.session_state.selected_district = st.selectbox(
+        st.subheader("")
+
+        # Initialize session state for selected district
+        if "selected_district" not in st.session_state:
+            st.session_state.selected_district = "Porto"
+
+        # Get available districts for the dropdown
+        districts = ["All"] + sorted([d.capitalize() for d in district_mapping.keys()])
+
+        # District selection dropdown - The key fix is here
+        selected_district = st.selectbox(
             "Selecione um distrito",
-            ["All"] + sorted([d.capitalize() for d in district_mapping.keys()]),
-            index=0,
+            districts,
+            index=districts.index("Porto"),
             key="district_selector",
             label_visibility="collapsed",
         )
 
-        # Filter data based on selected district
-        if (
-            st.session_state.selected_district
-            and st.session_state.selected_district != "All"
-        ):
-            filtered_df = df[
-                df["distrito"].str.lower() == st.session_state.selected_district.lower()
-            ]
-            region_title = st.session_state.selected_district.capitalize()
+        # Update session state immediately when the selection changes
+        if selected_district != st.session_state.selected_district:
+            st.session_state.selected_district = selected_district
+
+        # Filter data based on the CURRENT selected district
+        if selected_district and selected_district != "All":
+            filtered_df = df[df["distrito"].str.lower() == selected_district.lower()]
+            region_title = selected_district.capitalize()
         else:
             filtered_df = df
             region_title = "Todo o País"
 
-        # Calculate KPIs for the selected region
-        avg_satisfaction = filtered_df["satisfaction_score"].mean()
-        avg_rent = filtered_df[filtered_df["housing_situation"] == "Renting"][
-            "valor-mensal-renda"
-        ].mean()
-        avg_purchase = filtered_df[filtered_df["housing_situation"] == "Owned"][
-            "valor-compra"
-        ].mean()
-
-        # Rent burden percentage
-        rent_burden_data = filtered_df[filtered_df["housing_situation"] == "Renting"]
-        high_burden_pct = (
-            rent_burden_data[
-                rent_burden_data["rent_burden"].isin(
-                    ["51-80% (High)", ">80% (Very High)"]
-                )
-            ].shape[0]
-            / rent_burden_data.shape[0]
-            * 100
-            if not rent_burden_data.empty
-            else 0
-        )
-
         # Housing distribution donut chart
-        housing_counts = filtered_df["housing_situation"].value_counts().reset_index()
-        housing_counts.columns = ["Housing Situation", "Count"]
+        if filtered_df.empty or "housing_situation" not in filtered_df.columns:
+            # Create empty pie chart with a message
+            fig = px.pie(
+                names=["No data available"],
+                values=[1],
+                hole=0.6,
+                title="Distribuição Habitacional",
+            )
+            fig.update_traces(textinfo="none")
+            fig.add_annotation(
+                text="Sem dados disponíveis", showarrow=False, font_size=14
+            )
+        else:
+            housing_counts = (
+                filtered_df["housing_situation"].value_counts().reset_index()
+            )
+            housing_counts.columns = ["Housing Situation", "Count"]
 
-        fig = px.pie(
-            housing_counts,
-            values="Count",
-            names="Housing Situation",
-            color="Housing Situation",
-            hole=0.6,
-            color_discrete_map=HOUSING_COLORS,
-            title="Distribuição Habitacional",
-        )
+            if housing_counts.empty:
+                # Another check just to be safe
+                fig = px.pie(
+                    names=["No data available"],
+                    values=[1],
+                    hole=0.6,
+                    title="Distribuição Habitacional",
+                )
+                fig.update_traces(textinfo="none")
+                fig.add_annotation(
+                    text="Sem dados disponíveis", showarrow=False, font_size=14
+                )
+            else:
+                fig = px.pie(
+                    housing_counts,
+                    values="Count",
+                    names="Housing Situation",
+                    color="Housing Situation",
+                    hole=0.6,
+                    color_discrete_map=HOUSING_COLORS,
+                    title="Distribuição Habitacional",
+                )
+
         fig.update_layout(
             height=250,
             margin=dict(l=10, r=10, t=40, b=10),
@@ -642,7 +589,57 @@ def show_visao_geral_tab(df):
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        # Create an integrated KPI summary card with text that incorporates all values
+        # Calculate KPIs for the selected region
+        avg_satisfaction = (
+            filtered_df["satisfaction_score"].mean() if not filtered_df.empty else 0
+        )
+        avg_rent = (
+            filtered_df[filtered_df["housing_situation"] == "Renting"][
+                "valor-mensal-renda"
+            ].mean()
+            if not filtered_df.empty
+            else 0
+        )
+        avg_purchase = (
+            filtered_df[filtered_df["housing_situation"] == "Owned"][
+                "valor-compra"
+            ].mean()
+            if not filtered_df.empty
+            else 0
+        )
+
+        # Rent burden percentage
+        rent_burden_data = (
+            filtered_df[filtered_df["housing_situation"] == "Renting"]
+            if not filtered_df.empty
+            else pd.DataFrame()
+        )
+        high_burden_pct = (
+            rent_burden_data[
+                rent_burden_data["rent_burden"].isin(
+                    ["51-80% (High)", ">80% (Very High)"]
+                )
+            ].shape[0]
+            / rent_burden_data.shape[0]
+            * 100
+            if not rent_burden_data.empty
+            else 0
+        )
+
+        # Safe values for text
+        avg_satisfaction = 0 if pd.isna(avg_satisfaction) else avg_satisfaction
+        avg_rent = 0 if pd.isna(avg_rent) else avg_rent
+        avg_purchase = 0 if pd.isna(avg_purchase) else avg_purchase
+
+        # Format rent and purchase prices with thousands separator
+        avg_rent_formatted = (
+            f"{avg_rent:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        )
+        avg_purchase_formatted = (
+            f"{avg_purchase:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        )
+
+        # Define levels based on values
         burden_severity = (
             "alta"
             if high_burden_pct > 40
@@ -658,35 +655,90 @@ def show_visao_geral_tab(df):
             else "baixa"
         )
 
-        # Format rent and purchase prices with thousands separator
-        avg_rent_formatted = (
-            f"{avg_rent:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        )
-        avg_purchase_formatted = (
-            f"{avg_purchase:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        )
+        if not filtered_df.empty:
+            # First paragraph
+            st.markdown(
+                f"""
+            <p style="color: #333; line-height: 1.6; text-align: justify; margin-bottom: 15px;">
+                Em <strong>{region_title}</strong>, a satisfação média com a habitação é <strong>{avg_satisfaction:.1f}/5</strong>, 
+                considerada <strong>{satisfaction_level}</strong>. O preço médio de compra é de <strong>€{avg_purchase_formatted}</strong>, 
+                enquanto o valor médio de arrendamento é de <strong>€{avg_rent_formatted}</strong> mensais.
+            </p>
+            """,
+                unsafe_allow_html=True,
+            )
 
-        # First paragraph
+            # Second paragraph
+            st.markdown(
+                f"""
+            <p style="color: #333; line-height: 1.6; text-align: justify;">
+                <strong>{high_burden_pct:.1f}%</strong> das pessoas em situação de arrendamento apresentam sobrecarga 
+                habitacional, o que representa uma percentagem <strong>{burden_severity}</strong> de
+                pessoas gastando mais de 50% do rendimento em habitação.
+            </p>
+            """,
+                unsafe_allow_html=True,
+            )
+        else:
+            # Display message when no data is available
+            st.markdown(
+                f"""
+            <p style="color: #333; line-height: 1.6; text-align: center; margin: 20px 0;">
+                Não existem dados disponíveis para <strong>{region_title}</strong>.
+            </p>
+            """,
+                unsafe_allow_html=True,
+            )
+
+    with sim_col:
+        # Housing Affordability Simulator
+        st.subheader("Simulador de Acessibilidade Habitacional")
+
         st.markdown(
-            f"""
-        <p style="color: #333; line-height: 1.6; text-align: justify; margin-bottom: 15px;">
-            Em <strong>{region_title}</strong>, a satisfação média com a habitação é <strong>{avg_satisfaction:.1f}/5</strong>, 
-            considerada <strong>{satisfaction_level}</strong>. O preço médio de compra é de <strong>€{avg_purchase_formatted}</strong>, 
-            enquanto o valor médio de arrendamento é de <strong>€{avg_rent_formatted}</strong> mensais.
-        </p>
+            """
+        <div class="info-card">
+            Calcule quanto pode gastar em habitação com base no seu rendimento anual.
+            A regra geral é que as despesas com habitação não devem exceder 30% do rendimento bruto mensal.
+        </div>
         """,
             unsafe_allow_html=True,
         )
 
-        # Second paragraph
-        st.markdown(
-            f"""
-        <p style="color: #333; line-height: 1.6; text-align: justify;">
-            <strong>{high_burden_pct:.1f}%</strong> das pessoas em situação de arrendamento apresentam sobrecarga 
-            habitacional, o que representa uma percentagem <strong>{burden_severity}</strong> de
-            pessoas gastando mais de 50% do rendimento em habitação.
-        </p>
-        """,
-            unsafe_allow_html=True,
+        # Income input
+        income_input = st.slider(
+            "Rendimento Anual Líquido (€)",
+            min_value=1000,
+            max_value=100000,
+            value=15000,
+            step=100,
+            format="€%d",
         )
 
+        # Calculate affordability
+        monthly_income = income_input / 12
+        affordable_housing = monthly_income * 0.3
+
+        # Display results with enhanced styling
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(
+                f"""
+            <div class="metric-card" style="height: 180px; display: grid; grid-template-rows: 1fr 1fr 1fr; justify-content: center; align-items: center;">
+                <div class="metric-label">Rendimento Mensal Líquido (€)</div>
+                <div class="metric-value">{monthly_income:.2f}€</div>
+                <div class="metric-label"></div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+        with col2:
+            st.markdown(
+                f"""
+            <div class="metric-card" style="height: 180px; display: grid; grid-template-rows: 1fr 1fr 1fr; justify-content: center; align-items: center;">
+                <div class="metric-label">Custo Mensal Recomendado (€)</div>
+                <div class="metric-value">{affordable_housing:.2f}€</div>
+                <div class="metric-label"><30% do rendimento</div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
