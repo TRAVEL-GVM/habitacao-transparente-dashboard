@@ -206,22 +206,18 @@ file_path = os.getcwd() + "/data.csv"
 df = load_data(file_path)
 
 # Create dashboard title and introduction
-st.title("Dashboard do Habitação Transparente")
-st.markdown("""
-This interactive dashboard visualizes housing conditions in Portugal, including ownership patterns, 
-geographic distribution, satisfaction levels, and financial aspects.
-""")
+st.image("design docs/dssg_icon_header.svg",width=250)
 
 # Create tabs for different insights
 tab0, tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "General Overview",
-    "Housing Distribution", 
-    "Geographic Analysis", 
-    "Satisfaction Levels", 
-    "Income vs Housing Costs",
-    "Education & Employment",
-    "Housing Types & Sizes",
-    "Exploratory Data Analysis"
+    "Visão Geral",
+    "Distribuição de Habitações", 
+    "Análise Geográfica", 
+    "Níveis de Satisfação", 
+    "Rendimento vs Custos de Habitação",
+    "Educação e Emprego",
+    "Tipos e Tamanhos de Habitação",
+    "Análise Exploratória de Dados"
 ])
 
 with tab0:
