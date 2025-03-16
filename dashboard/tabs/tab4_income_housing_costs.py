@@ -29,7 +29,7 @@ def show_income_housing_costs_tab(df):
     
     # Introdução com estilo melhorado
     st.markdown("""
-    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32;">
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; margin-bottom: 20px;">
     <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
     <p>Esta secção analisa a relação entre os rendimentos e os custos habitacionais em Portugal, destacando questões 
     de acessibilidade e sobrecarga financeira.</p>

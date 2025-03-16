@@ -28,7 +28,7 @@ def show_education_employment_tab(df):
     
     # Introdução com estilo melhorado
     st.markdown("""
-    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32;">
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; margin-bottom: 20px;">
     <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
     <p>Esta secção explora como os níveis educacionais e a situação profissional se relacionam com as situações 
     habitacionais, níveis de rendimento e satisfação com a habitação em Portugal.</p>
