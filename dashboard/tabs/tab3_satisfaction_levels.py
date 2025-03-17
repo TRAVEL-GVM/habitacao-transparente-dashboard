@@ -610,23 +610,30 @@ def show_satisfaction_levels_tab(df):
 
     # Income vs. satisfaction
     st.subheader("Rendimento vs. Satisfação")
-    # Satisfaction by income
+
+
+
+    # Satisfaction by income - only compute this once
     income_satisfaction = (
-        filtered_df.groupby("rendimento-anual")["satisfaction_level"]
+        filtered_df.groupby("rendimento_clean")["satisfaction_level"]
         .value_counts()
         .unstack()
         .fillna(0)
     )
-    
+
     # Convert column names to Portuguese
     income_satisfaction.columns = [satisfaction_pt_labels.get(col, col) for col in income_satisfaction.columns]
 
+    # Create only one chart
     fig = px.bar(
         income_satisfaction,
         barmode="stack",
         title="Níveis de Satisfação por Escalão de Rendimento",
-        labels={"rendimento-anual": "Rendimento Anual (€)", "value": "Contagem"},
+        labels={"rendimento_clean": "Rendimento Anual (€)", "value": "Contagem"},
+        color_discrete_map=SATISFACTION_COLORS_PT,
     )
+
+    # Display the chart only once
     st.plotly_chart(fig)
 
     # Calculate correlation between income and satisfaction
@@ -792,7 +799,7 @@ def show_satisfaction_levels_tab(df):
             x="distrito",
             y="satisfaction_score",
             color="satisfaction_score",
-            color_continuous_scale="RdYlGn",
+            color_continuous_scale=COLOR_SCALES["diverging"],
             title="Pontuação Média de Satisfação por Distrito",
             labels={
                 "distrito": "Distrito",
@@ -992,7 +999,7 @@ def show_satisfaction_levels_tab(df):
                     "fillOpacity": 0.9,
                 }
 
-            # Add GeoJSON with custom popups and styling
+            # Add GeoJson with custom popups and styling
             folium.GeoJson(
                 portugal_geojson,
                 name="Satisfaction by District",
