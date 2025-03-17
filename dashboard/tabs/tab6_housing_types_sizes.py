@@ -26,7 +26,7 @@ def show_housing_types_sizes_tab(df):
     
     # Start with a compelling problem statement
     st.markdown("""
-    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32;">
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; margin-bottom: 20px;">
     <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
     <p>Esta análise revela insights importantes sobre os tipos e tamanhos de habitação em Portugal, destacando os desafios de compatibilidade entre o parque habitacional disponível e as necessidades dos agregados familiares.</p>
     <ul>

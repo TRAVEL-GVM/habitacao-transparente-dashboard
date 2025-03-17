@@ -1,6 +1,7 @@
 seaborn
 streamlit
 pandas
+scipy
 plotly
 folium
 streamlit_folium
