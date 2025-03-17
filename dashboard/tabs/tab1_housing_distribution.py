@@ -155,7 +155,7 @@ def show_housing_distribution_tab(df):
     # Adiciona mapeamento entre os rótulos em português e os valores dos dados
     map_housing = {
         "Arrendamento": "Renting",
-        "Própria": "Owned",
+        "Casa Própria": "Owned",
         "Vivendo com outros": "Living with others"
     }
     selected_situation = st.selectbox(
@@ -182,7 +182,7 @@ def show_housing_distribution_tab(df):
             avg_rent = filtered_df["valor-mensal-renda"].mean()
             if not pd.isna(avg_rent):
                 st.metric("Renda Mensal Média", f"€{avg_rent:.2f}")
-        elif selected_situation == "Própria":
+        elif selected_situation == "Casa Própria":
             avg_price = filtered_df["valor-compra"].mean()
             if not pd.isna(avg_price):
                 st.metric("Preço Médio de Compra", f"€{avg_price:.2f}")
@@ -204,14 +204,25 @@ def show_housing_distribution_tab(df):
         edu_counts = filtered_df["education_level"].value_counts().reset_index()
         edu_counts.columns = ["Education Level", "Count"]
 
+        # Translate education levels to Portuguese
+        translation_map = {
+            "Basic": "Básico",
+            "High School": "Secundário",
+            "Vocational": "Profissional",
+            "Bachelor's": "Licenciatura",
+            "Master's": "Mestrado",
+            "PhD": "Doutoramento",
+        }
+        edu_counts["Education Level"] = edu_counts["Education Level"].map(translation_map)
+
         # Sort education levels by a logical order
         education_order = [
-            "Basic",
-            "High School",
-            "Vocational",
-            "Bachelor's",
-            "Master's",
-            "PhD",
+            "Básico",
+            "Secundário",
+            "Profissional",
+            "Licenciatura",
+            "Mestrado",
+            "Doutoramento",
         ]
         edu_counts["Education Level"] = pd.Categorical(
             edu_counts["Education Level"], categories=education_order, ordered=True

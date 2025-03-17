@@ -129,7 +129,7 @@ def show_visao_geral_tab(df):
         st.markdown(
             f"""
         <div class="metric-card">
-            <div class="metric-label">Propriedade</div>
+            <div class="metric-label">Casa Própria</div>
             <div class="metric-value">{ownership_pct:.1f}%</div>
             <div class="metric-icon">🏠</div>
         </div>
@@ -153,7 +153,7 @@ def show_visao_geral_tab(df):
         st.markdown(
             f"""
         <div class="metric-card">
-            <div class="metric-label">Vivendo com Outros</div>
+            <div class="metric-label">Viver com outros</div>
             <div class="metric-value">{living_with_others_pct:.1f}%</div>
             <div class="metric-icon">👪</div>
         </div>

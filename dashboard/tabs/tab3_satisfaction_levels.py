@@ -752,359 +752,363 @@ def show_satisfaction_levels_tab(df):
     else:
         st.write("Não há dados de arrendamento disponíveis para os níveis de satisfação selecionados.")
 
-    # Satisfaction by district - map visualization
-    st.subheader("Distribuição Geográfica da Satisfação")
-    st.markdown("""
-    As seguintes visualizações mostram como a satisfação habitacional varia entre diferentes regiões de Portugal.
-    Estes padrões geográficos podem ajudar a identificar áreas que possam requerer políticas habitacionais direcionadas.
-    """)
+    col1, col2 = st.columns([3, 2])
 
-    # Define satisfaction weights with Portuguese descriptions
-    satisfaction_weights = {
-        "Very Satisfied": 2,  # Muito Satisfeito
-        "Satisfied": 1,       # Satisfeito
-        "Neutral": 0,         # Neutro
-        "Dissatisfied": -1,   # Insatisfeito
-        "Very Dissatisfied": -2, # Muito Insatisfeito
-    }
-
-    # Convert satisfaction levels to numeric scores
-    filtered_df.loc[:, "satisfaction_numeric"] = filtered_df["satisfaction_level"].map(
-        satisfaction_weights
-    )
-
-    # Calculate mean satisfaction score by district
-    district_satisfaction = (
-        filtered_df.groupby("distrito")["satisfaction_numeric"]
-        .agg(["mean", "count"])
-        .reset_index()
-    )
-    district_satisfaction = district_satisfaction.rename(
-        columns={"mean": "satisfaction_score"}
-    )
-
-    # Create visualization
-    fig = px.bar(
-        district_satisfaction,
-        x="distrito",
-        y="satisfaction_score",
-        color="satisfaction_score",
-        color_continuous_scale="RdYlGn",
-        title="Pontuação Média de Satisfação por Distrito",
-        labels={
-            "distrito": "Distrito",
-            "satisfaction_score": "Pontuação de Satisfação (-2 a +2)",
-        },
-        hover_data=["count"],  # Include count in hover information
-    )
-
-    # Improve the layout
-    fig.update_layout(
-        xaxis_title="Distrito",
-        yaxis_title="Pontuação de Satisfação (-2 a +2)",
-        yaxis=dict(
-            tickmode="linear",
-            tick0=-2,
-            dtick=0.5,
-            range=[-2.1, 2.1],  # Set fixed range for better comparison
-        ),
-    )
-
-    st.plotly_chart(fig)
-
-    # Identify districts with highest and lowest satisfaction
-    district_satisfaction = district_satisfaction.sort_values(
-        "satisfaction_score", ascending=False
-    )
-    highest_district = district_satisfaction.iloc[0]["distrito"]
-    lowest_district = district_satisfaction.iloc[-1]["distrito"]
-
-    st.markdown(f"""
-    **Insights Geográficos:**
-    - {highest_district} apresenta a pontuação média de satisfação mais elevada
-    - {lowest_district} apresenta a pontuação média de satisfação mais baixa
-    - As áreas urbanas tendem a ter níveis de satisfação mais variados, provavelmente devido a custos habitacionais mais elevados mas melhores serviços
-    - As áreas rurais apresentam padrões de satisfação elevada (habitação acessível, qualidade de vida) ou baixa satisfação (falta de serviços, oportunidades de emprego)
-    """)
-
-    # Map visualization using GeoJSON data for Portuguese districts
-    st.subheader("Mapa de Satisfação de Portugal")
-    st.markdown("""
-    Este mapa interativo visualiza os níveis de satisfação habitacional nos distritos de Portugal.
-    Áreas verdes indicam maior satisfação, enquanto áreas vermelhas mostram regiões com pontuações de satisfação mais baixas.
-    Passe o cursor sobre os distritos para ver os seus nomes, e clique para estatísticas detalhadas de satisfação.
-    """)
-
-    # Custom function to create a more informative popup with statistics and styling
-    def create_popup_html(district_name, score, count):
-        """Create an HTML popup with styled district information."""
-        # Determine satisfaction description and color based on score
-        if score >= 1.5:
-            description = "Satisfação Muito Alta"
-            color = "#1a9850"
-        elif score >= 0.5:
-            description = "Satisfação Alta"
-            color = "#91cf60"
-        elif score >= -0.5:
-            description = "Satisfação Neutra"
-            color = "#fee08b"
-        elif score >= -1.5:
-            description = "Satisfação Baixa"
-            color = "#fc8d59"
-        else:
-            description = "Satisfação Muito Baixa"
-            color = "#d73027"
-
-        # Create HTML with better styling
-        html = f"""
-        <div style="font-family: Arial, sans-serif; padding: 2px; ">
-            <h3 style="margin-top: 0; margin-bottom: 10px; color: #333; border-bottom: 2px solid {color};">{district_name.capitalize()}</h3>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="font-weight: bold;">Pontuação de Satisfação:</span>
-                <span style="background-color: {color}; color: white; padding: 2px 8px; border-radius: 10px;">{score:.2f}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="font-weight: bold;">Estado:</span>
-                <span>{description}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span style="font-weight: bold;">Tamanho da Amostra:</span>
-                <span>{count} respostas</span>
-            </div>
-        </div>
-        """
-        return html
-
-    # Load the GeoJSON file
-    try:
-        with open("distrito_all_s.geojson", "r") as f:
-            portugal_geojson = json.load(f)
-
-        # Ensure district names match between your dataset and GeoJSON
-        # You might need to normalize district names (lowercase, remove accents, etc.)
-        district_satisfaction["distrito_normalized"] = (
-            district_satisfaction["distrito"]
-            .str.lower()
-            .str.normalize("NFKD")
-            .str.encode("ascii", errors="ignore")
-            .str.decode("utf-8")
-        )
-
-        # Create a dictionary for mapping district names from your dataset to GeoJSON
-        district_mapping = {
-            "viana do castelo": "viana do castelo",
-            "braga": "braga",
-            "vila real": "vila real",
-            "braganca": "braganca",
-            "aveiro": "aveiro",
-            "coimbra": "coimbra",
-            "leiria": "leiria",
-            "lisboa": "lisboa",
-            "porto": "porto",
-            "setubal": "setubal",
-            "viseu": "viseu",
-            "guarda": "guarda",
-            "santarem": "santarem",
-            "beja": "beja",
-            "castelo branco": "castelo branco",
-            "evora": "evora",
-            "faro": "faro",
-            "portalegre": "portalegre",
-            "ilha da madeira": "madeira",
-            "acores": "acores",
-        }
-
-        # Create a new column with matched district names
-        district_satisfaction["distrito_geojson"] = district_satisfaction[
-            "distrito_normalized"
-        ].map(district_mapping)
-
-        # Convert data to dictionary for easier access
-        district_satisfaction_dict = district_satisfaction.set_index(
-            "distrito_geojson"
-        )["satisfaction_score"].to_dict()
-        district_count_dict = district_satisfaction.set_index("distrito_geojson")[
-            "count"
-        ].to_dict()
-
-        # Create a base map centered on continental Portugal with better styling
-        m = folium.Map(
-            location=[39.6, -8.0],
-            zoom_start=6,
-            tiles="CartoDB Positron",  # Cleaner, more modern base map
-            control_scale=True,  # Add scale bar
-        )
-
-        # Add a title to the map
-        title_html = """
-                <div style="position: fixed; 
-                            top: 10px; left: 50px; width: 300px; height: 30px; 
-                            background-color: rgba(255, 255, 255, 0.8);
-                            border-radius: 5px; 
-                            font-size: 16pt; font-weight: bold;
-                            text-align: center;
-                            padding: 5px;
-                            z-index: 9999;">
-                    Satisfação Habitacional em Portugal
-                </div>
-                """
-        m.get_root().html.add_child(folium.Element(title_html))
-
-        # Define a better style function with a stronger color scale
-        def style_function(feature):
-            district_name = feature["properties"]["Distrito"].lower()
-            try:
-                score = district_satisfaction_dict[district_name]
-                # Calculate color based on score (-2 to +2)
-                if score < -1.5:
-                    # Map satisfaction levels to the Portuguese equivalents but use English values for color mapping
-                    color = SATISFACTION_COLORS["Very Dissatisfied"]
-                elif score < -0.5:
-                    color = SATISFACTION_COLORS["Dissatisfied"]
-                elif score < 0.5:
-                    color = SATISFACTION_COLORS["Neutral"]
-                elif score < 1.5:
-                    color = SATISFACTION_COLORS["Satisfied"]
-                else:
-                    color = SATISFACTION_COLORS["Very Satisfied"]
-            except KeyError:
-                color = "#f7f7f7"  # Gray for districts with no data
-
-            return {
-                "fillColor": color,
-                "weight": 1.5,
-                "opacity": 1,
-                "color": "white",  # White border to distinguish districts
-                "dashArray": "",
-                "fillOpacity": 0.7,  # Slightly more opaque
-            }
-
-        # Define a highlight function for better interactivity
-        def highlight_function(feature):
-            return {
-                "weight": 3,
-                "color": "#666",
-                "dashArray": "",
-                "fillOpacity": 0.9,
-            }
-
-        # Add GeoJSON with custom popups and styling
-        folium.GeoJson(
-            portugal_geojson,
-            name="Satisfaction by District",
-            style_function=style_function,
-            highlight_function=highlight_function,
-            tooltip=folium.features.GeoJsonTooltip(
-                fields=["Distrito"],
-                aliases=["Distrito:"],
-                style="background-color: white; color: #333333; font-weight: bold; font-family: Arial; font-size: 12px; padding: 10px; border-radius: 3px; box-shadow: 3px 3px 10px rgba(0,0,0,0.2);",
-            ),
-        ).add_to(m)
-
-        # Add custom popups with satisfaction data
-        for feature in portugal_geojson["features"]:
-            district_name = feature["properties"]["Distrito"].lower()
-            if district_name in district_satisfaction_dict:
-                score = district_satisfaction_dict[district_name]
-                count = district_count_dict[district_name]
-
-                # Get coordinates for the popup (center of polygon)
-                coords = feature["geometry"]["coordinates"]
-                if feature["geometry"]["type"] == "Polygon":
-                    # Calculate centroid of first polygon
-                    lat_points = [point[1] for point in coords[0]]
-                    lng_points = [point[0] for point in coords[0]]
-                    center_lat = sum(lat_points) / len(lat_points)
-                    center_lng = sum(lng_points) / len(lng_points)
-                else:  # MultiPolygon
-                    # Take the center of the first polygon in the multipolygon
-                    lat_points = [point[1] for point in coords[0][0]]
-                    lng_points = [point[0] for point in coords[0][0]]
-                    center_lat = sum(lat_points) / len(lat_points)
-                    center_lng = sum(lng_points) / len(lng_points)
-
-                # Add a circle marker with popup
-                folium.CircleMarker(
-                    location=[center_lat, center_lng],
-                    radius=5,
-                    color="#333333",
-                    fill=True,
-                    fill_color="#333333",
-                    fill_opacity=0.7,
-                    popup=folium.Popup(
-                        html=create_popup_html(
-                            feature["properties"]["Distrito"], score, count
-                        ),
-                        max_width=300,
-                    ),
-                ).add_to(m)
-
-        # Add a custom legend with Portuguese satisfaction levels
-        legend_html = """
-            <div style="position: fixed; 
-                        bottom: 10px; right: 10px; 
-                        border-radius: 5px; 
-                        background-color: rgba(255, 255, 255, 0.8);
-                        z-index: 9999; font-size:12px;
-                        padding: 5px; ">
-                <div style="text-align: center; margin-bottom: 5px; font-weight: bold;">Nível de Satisfação</div>
-                <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <div style="background-color: #1a9850; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Muito Alto (1,5 a 2,0)
-                </div>
-                <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <div style="background-color: #91cf60; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Alto (0,5 a 1,5)
-                </div>
-                <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <div style="background-color: #fee08b; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Neutro (-0,5 a 0,5)
-                </div>
-                <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <div style="background-color: #fc8d59; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Baixo (-1,5 a -0,5)
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="background-color: #d73027; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Muito Baixo (-2,0 a -1,5)
-                </div>
-            </div>
-        """
-        m.get_root().html.add_child(folium.Element(legend_html))
-
-        # Add mini map for context
-        minimap = folium.plugins.MiniMap(toggle_display=True)
-        m.add_child(minimap)
-
-        # Add fullscreen button
-        folium.plugins.Fullscreen(
-            position="topleft",
-            title="Expandir mapa",
-            title_cancel="Sair do ecrã inteiro",
-            force_separate_button=True,
-        ).add_to(m)
-
-        # Add search functionality
-        folium.plugins.Search(
-            layer=folium.GeoJson(portugal_geojson),
-            geom_type="Polygon",
-            placeholder="Procurar um distrito",
-            collapsed=True,
-            search_label="Distrito",
-        ).add_to(m)
-
-        # Display the map
-        folium_static(m)
-
-        # Add contextual information about the map
+    with col1:
+        # Satisfaction by district - map visualization
+        st.subheader("Distribuição Geográfica da Satisfação")
         st.markdown("""
-        **Insights da Análise do Mapa:**
-        
-        - **Variações Regionais**: O mapa revela disparidades significativas na satisfação habitacional entre diferentes regiões de Portugal.
-        - **Divisão Urbano-Rural**: Os grandes centros urbanos como Lisboa e Porto apresentam padrões de satisfação distintos em comparação com as áreas rurais.
-        - **Litoral vs. Interior**: Os distritos costeiros geralmente demonstram perfis de satisfação diferentes dos das regiões interiores.
-        - **Consideração do Tamanho da Amostra**: Ao interpretar estes dados, note que alguns distritos podem ter tamanhos de amostra menores, o que poderia afetar a fiabilidade das suas pontuações de satisfação.
-        
-        Clique em qualquer marcador de distrito para ver estatísticas detalhadas de satisfação. A natureza interativa deste mapa permite a exploração de padrões geográficos na satisfação habitacional em Portugal.
+        As seguintes visualizações mostram como a satisfação habitacional varia entre diferentes regiões de Portugal.
+        Estes padrões geográficos podem ajudar a identificar áreas que possam requerer políticas habitacionais direcionadas.
         """)
 
-    except Exception as e:
-        st.error(f"Erro ao carregar ou processar o mapa: {e}")
-        st.info(
-            "Por favor, certifique-se de que o ficheiro GeoJSON 'distrito_all_s.geojson' está disponível no diretório da aplicação."
+        # Define satisfaction weights with Portuguese descriptions
+        satisfaction_weights = {
+            "Very Satisfied": 2,  # Muito Satisfeito
+            "Satisfied": 1,       # Satisfeito
+            "Neutral": 0,         # Neutro
+            "Dissatisfied": -1,   # Insatisfeito
+            "Very Dissatisfied": -2, # Muito Insatisfeito
+        }
+
+        # Convert satisfaction levels to numeric scores
+        filtered_df.loc[:, "satisfaction_numeric"] = filtered_df["satisfaction_level"].map(
+            satisfaction_weights
         )
+
+        # Calculate mean satisfaction score by district
+        district_satisfaction = (
+            filtered_df.groupby("distrito")["satisfaction_numeric"]
+            .agg(["mean", "count"])
+            .reset_index()
+        )
+        district_satisfaction = district_satisfaction.rename(
+            columns={"mean": "satisfaction_score"}
+        )
+
+        # Create visualization
+        fig = px.bar(
+            district_satisfaction,
+            x="distrito",
+            y="satisfaction_score",
+            color="satisfaction_score",
+            color_continuous_scale="RdYlGn",
+            title="Pontuação Média de Satisfação por Distrito",
+            labels={
+                "distrito": "Distrito",
+                "satisfaction_score": "Pontuação de Satisfação (-2 a +2)",
+            },
+            hover_data=["count"],  # Include count in hover information
+        )
+
+        # Improve the layout
+        fig.update_layout(
+            xaxis_title="Distrito",
+            yaxis_title="Pontuação de Satisfação (-2 a +2)",
+            yaxis=dict(
+                tickmode="linear",
+                tick0=-2,
+                dtick=0.5,
+                range=[-2.1, 2.1],  # Set fixed range for better comparison
+            ),
+        )
+
+        st.plotly_chart(fig)
+
+        # Identify districts with highest and lowest satisfaction
+        district_satisfaction = district_satisfaction.sort_values(
+            "satisfaction_score", ascending=False
+        )
+        highest_district = district_satisfaction.iloc[0]["distrito"]
+        lowest_district = district_satisfaction.iloc[-1]["distrito"]
+
+        st.markdown(f"""
+        **Insights Geográficos:**
+        - {highest_district} apresenta a pontuação média de satisfação mais elevada
+        - {lowest_district} apresenta a pontuação média de satisfação mais baixa
+        - As áreas urbanas tendem a ter níveis de satisfação mais variados, provavelmente devido a custos habitacionais mais elevados mas melhores serviços
+        - As áreas rurais apresentam padrões de satisfação elevada (habitação acessível, qualidade de vida) ou baixa satisfação (falta de serviços, oportunidades de emprego)
+        """)
+
+    with col2:
+        # Map visualization using GeoJSON data for Portuguese districts
+        st.subheader("Mapa de Satisfação de Portugal")
+        st.markdown("""
+        Este mapa interativo visualiza os níveis de satisfação habitacional nos distritos de Portugal.
+        Áreas verdes indicam maior satisfação, enquanto áreas vermelhas mostram regiões com pontuações de satisfação mais baixas.
+        Passe o cursor sobre os distritos para ver os seus nomes, e clique para estatísticas detalhadas de satisfação.
+        """)
+
+        # Custom function to create a more informative popup with statistics and styling
+        def create_popup_html(district_name, score, count):
+            """Create an HTML popup with styled district information."""
+            # Determine satisfaction description and color based on score
+            if score >= 1.5:
+                description = "Satisfação Muito Alta"
+                color = "#1a9850"
+            elif score >= 0.5:
+                description = "Satisfação Alta"
+                color = "#91cf60"
+            elif score >= -0.5:
+                description = "Satisfação Neutra"
+                color = "#fee08b"
+            elif score >= -1.5:
+                description = "Satisfação Baixa"
+                color = "#fc8d59"
+            else:
+                description = "Satisfação Muito Baixa"
+                color = "#d73027"
+
+            # Create HTML with better styling
+            html = f"""
+            <div style="font-family: Arial, sans-serif; padding: 2px; ">
+                <h3 style="margin-top: 0; margin-bottom: 10px; color: #333; border-bottom: 2px solid {color};">{district_name.capitalize()}</h3>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-weight: bold;">Pontuação de Satisfação:</span>
+                    <span style="background-color: {color}; color: white; padding: 2px 8px; border-radius: 10px;">{score:.2f}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-weight: bold;">Estado:</span>
+                    <span>{description}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold;">Tamanho da Amostra:</span>
+                    <span>{count} respostas</span>
+                </div>
+            </div>
+            """
+            return html
+
+        # Load the GeoJSON file
+        try:
+            with open("distrito_all_s.geojson", "r") as f:
+                portugal_geojson = json.load(f)
+
+            # Ensure district names match between your dataset and GeoJSON
+            # You might need to normalize district names (lowercase, remove accents, etc.)
+            district_satisfaction["distrito_normalized"] = (
+                district_satisfaction["distrito"]
+                .str.lower()
+                .str.normalize("NFKD")
+                .str.encode("ascii", errors="ignore")
+                .str.decode("utf-8")
+            )
+
+            # Create a dictionary for mapping district names from your dataset to GeoJSON
+            district_mapping = {
+                "viana do castelo": "viana do castelo",
+                "braga": "braga",
+                "vila real": "vila real",
+                "braganca": "braganca",
+                "aveiro": "aveiro",
+                "coimbra": "coimbra",
+                "leiria": "leiria",
+                "lisboa": "lisboa",
+                "porto": "porto",
+                "setubal": "setubal",
+                "viseu": "viseu",
+                "guarda": "guarda",
+                "santarem": "santarem",
+                "beja": "beja",
+                "castelo branco": "castelo branco",
+                "evora": "evora",
+                "faro": "faro",
+                "portalegre": "portalegre",
+                "ilha da madeira": "madeira",
+                "acores": "acores",
+            }
+
+            # Create a new column with matched district names
+            district_satisfaction["distrito_geojson"] = district_satisfaction[
+                "distrito_normalized"
+            ].map(district_mapping)
+
+            # Convert data to dictionary for easier access
+            district_satisfaction_dict = district_satisfaction.set_index(
+                "distrito_geojson"
+            )["satisfaction_score"].to_dict()
+            district_count_dict = district_satisfaction.set_index("distrito_geojson")[
+                "count"
+            ].to_dict()
+
+            # Create a base map centered on continental Portugal with better styling
+            m = folium.Map(
+                location=[39.6, -8.0],
+                zoom_start=6,
+                tiles="CartoDB Positron",  # Cleaner, more modern base map
+                control_scale=True,  # Add scale bar
+            )
+
+            # Add a title to the map
+            title_html = """
+                    <div style="position: fixed; 
+                                top: 10px; left: 50px; width: 300px; height: 30px; 
+                                background-color: rgba(255, 255, 255, 0.8);
+                                border-radius: 5px; 
+                                font-size: 16pt; font-weight: bold;
+                                text-align: center;
+                                padding: 5px;
+                                z-index: 9999;">
+                        Satisfação Habitacional em Portugal
+                    </div>
+                    """
+            m.get_root().html.add_child(folium.Element(title_html))
+
+            # Define a better style function with a stronger color scale
+            def style_function(feature):
+                district_name = feature["properties"]["Distrito"].lower()
+                try:
+                    score = district_satisfaction_dict[district_name]
+                    # Calculate color based on score (-2 to +2)
+                    if score < -1.5:
+                        # Map satisfaction levels to the Portuguese equivalents but use English values for color mapping
+                        color = SATISFACTION_COLORS["Very Dissatisfied"]
+                    elif score < -0.5:
+                        color = SATISFACTION_COLORS["Dissatisfied"]
+                    elif score < 0.5:
+                        color = SATISFACTION_COLORS["Neutral"]
+                    elif score < 1.5:
+                        color = SATISFACTION_COLORS["Satisfied"]
+                    else:
+                        color = SATISFACTION_COLORS["Very Satisfied"]
+                except KeyError:
+                    color = "#f7f7f7"  # Gray for districts with no data
+
+                return {
+                    "fillColor": color,
+                    "weight": 1.5,
+                    "opacity": 1,
+                    "color": "white",  # White border to distinguish districts
+                    "dashArray": "",
+                    "fillOpacity": 0.7,  # Slightly more opaque
+                }
+
+            # Define a highlight function for better interactivity
+            def highlight_function(feature):
+                return {
+                    "weight": 3,
+                    "color": "#666",
+                    "dashArray": "",
+                    "fillOpacity": 0.9,
+                }
+
+            # Add GeoJSON with custom popups and styling
+            folium.GeoJson(
+                portugal_geojson,
+                name="Satisfaction by District",
+                style_function=style_function,
+                highlight_function=highlight_function,
+                tooltip=folium.features.GeoJsonTooltip(
+                    fields=["Distrito"],
+                    aliases=["Distrito:"],
+                    style="background-color: white; color: #333333; font-weight: bold; font-family: Arial; font-size: 12px; padding: 10px; border-radius: 3px; box-shadow: 3px 3px 10px rgba(0,0,0,0.2);",
+                ),
+            ).add_to(m)
+
+            # Add custom popups with satisfaction data
+            for feature in portugal_geojson["features"]:
+                district_name = feature["properties"]["Distrito"].lower()
+                if district_name in district_satisfaction_dict:
+                    score = district_satisfaction_dict[district_name]
+                    count = district_count_dict[district_name]
+
+                    # Get coordinates for the popup (center of polygon)
+                    coords = feature["geometry"]["coordinates"]
+                    if feature["geometry"]["type"] == "Polygon":
+                        # Calculate centroid of first polygon
+                        lat_points = [point[1] for point in coords[0]]
+                        lng_points = [point[0] for point in coords[0]]
+                        center_lat = sum(lat_points) / len(lat_points)
+                        center_lng = sum(lng_points) / len(lng_points)
+                    else:  # MultiPolygon
+                        # Take the center of the first polygon in the multipolygon
+                        lat_points = [point[1] for point in coords[0][0]]
+                        lng_points = [point[0] for point in coords[0][0]]
+                        center_lat = sum(lat_points) / len(lat_points)
+                        center_lng = sum(lng_points) / len(lng_points)
+
+                    # Add a circle marker with popup
+                    folium.CircleMarker(
+                        location=[center_lat, center_lng],
+                        radius=5,
+                        color="#333333",
+                        fill=True,
+                        fill_color="#333333",
+                        fill_opacity=0.7,
+                        popup=folium.Popup(
+                            html=create_popup_html(
+                                feature["properties"]["Distrito"], score, count
+                            ),
+                            max_width=300,
+                        ),
+                    ).add_to(m)
+
+            # Add a custom legend with Portuguese satisfaction levels
+            legend_html = """
+                <div style="position: fixed; 
+                            bottom: 10px; right: 10px; 
+                            border-radius: 5px; 
+                            background-color: rgba(255, 255, 255, 0.8);
+                            z-index: 9999; font-size:12px;
+                            padding: 5px; ">
+                    <div style="text-align: center; margin-bottom: 5px; font-weight: bold;">Nível de Satisfação</div>
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <div style="background-color: #1a9850; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Muito Alto (1,5 a 2,0)
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <div style="background-color: #91cf60; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Alto (0,5 a 1,5)
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <div style="background-color: #fee08b; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Neutro (-0,5 a 0,5)
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <div style="background-color: #fc8d59; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Baixo (-1,5 a -0,5)
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="background-color: #d73027; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Muito Baixo (-2,0 a -1,5)
+                    </div>
+                </div>
+            """
+            m.get_root().html.add_child(folium.Element(legend_html))
+
+            # Add mini map for context
+            minimap = folium.plugins.MiniMap(toggle_display=True)
+            m.add_child(minimap)
+
+            # Add fullscreen button
+            folium.plugins.Fullscreen(
+                position="topleft",
+                title="Expandir mapa",
+                title_cancel="Sair do ecrã inteiro",
+                force_separate_button=True,
+            ).add_to(m)
+
+            # Add search functionality
+            folium.plugins.Search(
+                layer=folium.GeoJson(portugal_geojson),
+                geom_type="Polygon",
+                placeholder="Procurar um distrito",
+                collapsed=True,
+                search_label="Distrito",
+            ).add_to(m)
+
+            # Display the map
+            folium_static(m, width=800, height=400)
+
+            # Add contextual information about the map
+            st.markdown("""
+            **Insights da Análise do Mapa:**
+            
+            - **Variações Regionais**: O mapa revela disparidades significativas na satisfação habitacional entre diferentes regiões de Portugal.
+            - **Divisão Urbano-Rural**: Os grandes centros urbanos como Lisboa e Porto apresentam padrões de satisfação distintos em comparação com as áreas rurais.
+            - **Litoral vs. Interior**: Os distritos costeiros geralmente demonstram perfis de satisfação diferentes dos das regiões interiores.
+            - **Consideração do Tamanho da Amostra**: Ao interpretar estes dados, note que alguns distritos podem ter tamanhos de amostra menores, o que poderia afetar a fiabilidade das suas pontuações de satisfação.
+            
+            Clique em qualquer marcador de distrito para ver estatísticas detalhadas de satisfação.
+            """)
+
+        except Exception as e:
+            st.error(f"Erro ao carregar ou processar o mapa: {e}")
+            st.info(
+                "Por favor, certifique-se de que o ficheiro GeoJSON 'distrito_all_s.geojson' está disponível no diretório da aplicação."
+            )
