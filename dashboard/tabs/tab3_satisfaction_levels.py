@@ -321,12 +321,12 @@ def show_satisfaction_levels_tab(df):
             viz_df = filtered_df.copy()
             viz_df["housing_situation_pt"] = viz_df["housing_situation"].map(housing_situation_pt)
 
-            # Scatter plot with better grouping and labels
+            # Scatter plot with better grouping, labels and theme
             fig3 = px.scatter(
                 viz_df,
                 x="rendimento_numerical",
                 y="satisfaction_score",
-                color="housing_situation_pt",  # Use Portuguese labels
+                color="housing_situation_pt",
                 size="area_numerical",
                 hover_data=["distrito", "concelho", "income_group"],
                 opacity=0.7,
@@ -334,17 +334,27 @@ def show_satisfaction_levels_tab(df):
                 labels={
                     "rendimento_numerical": "Rendimento Anual (€)",
                     "satisfaction_score": "Pontuação de Satisfação (1-5)",
-                    "housing_situation_pt": "Situação Habitacional"  # Update label
+                    "housing_situation_pt": "Situação Habitacional"
                 },
+                color_discrete_sequence=COLOR_SCALES["qualitative"]
             )
 
             # Add income group reference lines
             for income_level in [7000, 12000, 20000, 35000, 50000, 80000]:
                 fig3.add_vline(
-                    x=income_level, line_dash="dash", line_color="gray", opacity=0.5
+                    x=income_level,
+                    line_dash="dash",
+                    line_color=TEXT_COLORS[1],
+                    opacity=0.5
                 )
 
-            fig3.update_layout(height=450)
+            fig3.update_layout(
+                height=450,
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                font_color=TEXT_COLORS[2],
+                title_font_color=TEXT_COLORS[0]
+            )
             st.plotly_chart(fig3, use_container_width=True)
 
         with col2:
