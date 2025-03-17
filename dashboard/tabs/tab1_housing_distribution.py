@@ -1,6 +1,7 @@
 # tab1_housing_distribution.py
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import sys
 from pathlib import Path
@@ -277,3 +278,405 @@ def show_housing_distribution_tab(df):
             
             Pesos de renda mais elevados frequentemente levam a uma redução dos gastos noutras necessidades e à dificuldade em poupar para o futuro.
             """)
+
+    # Secção para estratégias de compra e arrendamento
+    st.header("Estratégias de Compra e Arrendamento")
+    
+    st.markdown("""
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; margin-bottom: 10px;">
+    <h4 style="color: #2e7d32; margin-top: 0;">Análise de Estratégias</h4>
+    <p>Esta secção analisa as principais estratégias utilizadas pelos residentes portugueses para arrendar ou comprar habitação,
+    revelando diferentes abordagens e necessidades no mercado imobiliário.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Criar duas colunas para as análises de arrendamento e compra
+    col1, col2 = st.columns(2)
+
+    # Função para verificar valores únicos nas estratégias
+    def check_unique_strategies(df):
+        # Para estratégias de arrendamento
+        rent_strategies = set()
+        for strategies in df['estrategia-arrendamento'].dropna():
+            if isinstance(strategies, list):
+                for strategy in strategies:
+                    rent_strategies.add(strategy)
+        
+        # Limpar os valores de rent_strategies
+        cleaned_rent_strategies = set()
+        for strategy in rent_strategies:
+            # Substituir underscores e dash por espaços e capitalizar primeira letra
+            cleaned_strategy = strategy.replace('_', ' ').replace('-', ' ').capitalize()
+            cleaned_rent_strategies.add(cleaned_strategy)
+        
+        print("Valores únicos em estrategia-arrendamento:")
+        print(sorted(list(cleaned_rent_strategies)))
+        
+        # Para estratégias de compra
+        buy_strategies = set()
+        for strategies in df['estrategia-compra'].dropna():
+            if isinstance(strategies, list):
+                for strategy in strategies:
+                    buy_strategies.add(strategy)
+        
+        # Limpar os valores de buy_strategies
+        cleaned_buy_strategies = set()
+        for strategy in buy_strategies:
+            # Substituir underscores por espaços e capitalizar primeira letra
+            cleaned_strategy = strategy.replace('_', ' ').replace('-', ' ').capitalize()
+            cleaned_buy_strategies.add(cleaned_strategy)
+        
+        print("\nValores únicos em estrategia-compra:")
+        print(sorted(list(cleaned_buy_strategies)))
+        
+        return cleaned_rent_strategies, cleaned_buy_strategies
+
+    # Para executar esta verificação, você adicionaria este bloco temporariamente no início da função
+    # show_housing_distribution_tab ou o executaria em uma célula Jupyter separada antes de finalizar o código
+    rent_unique, buy_unique = check_unique_strategies(df)
+
+    # Criar mapas a partir dos valores únicos
+    rent_strategy_map = {strategy.lower().replace(' ', '-'): strategy for strategy in rent_unique}
+    buy_strategy_map = {strategy.lower().replace(' ', '-'): strategy for strategy in buy_unique}
+
+    
+    with col1:
+        st.subheader("Estratégias de Arrendamento")
+        
+        # Processar os dados de estratégia de arrendamento
+        # Extrair todas as estratégias mencionadas por respondentes
+        rent_strategies = []
+        for strategies in df['estrategia-arrendamento'].dropna():
+            if isinstance(strategies, list):
+                rent_strategies.extend(strategies)
+        
+        rent_strategy_counts = pd.Series(rent_strategies).value_counts().reset_index()
+        rent_strategy_counts.columns = ["Estratégia", "Contagem"]
+        
+        rent_strategy_counts['Estratégia'] = rent_strategy_counts['Estratégia'].map(rent_strategy_map)
+        
+        # Criar gráfico de barras para estratégias de arrendamento
+        fig = px.bar(
+            rent_strategy_counts,
+            x="Estratégia",
+            y="Contagem",
+            color="Estratégia",
+            color_discrete_sequence=PRIMARY_COLORS,
+            title="Estratégias Utilizadas para Encontrar Arrendamento",
+        )
+        fig.update_layout(
+            xaxis_title="Estratégia de Arrendamento",
+            yaxis_title="Número de Pessoas",
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            showlegend=False,
+            xaxis={'categoryorder':'total descending'}
+        )
+        st.plotly_chart(fig)
+        
+        # Adicionar insights sobre as estratégias de arrendamento
+        top_rent_strategy = rent_strategy_counts.iloc[0]['Estratégia']
+        st.markdown(f"""
+        **Principais Conclusões:**
+        - A estratégia mais comum para encontrar arrendamento é através de {top_rent_strategy}
+        - {rent_strategy_counts.iloc[0]['Contagem']} pessoas utilizaram esta estratégia
+        - O mercado de arrendamento em Portugal é fortemente influenciado por redes pessoais e plataformas online
+        """)
+        
+        # Análise adicional: Relação entre estratégia de arrendamento e valor da renda
+        st.subheader("Valor da Renda por Estratégia")
+        
+        # Criar um dataframe para armazenar valor médio de renda por estratégia
+        rent_values_by_strategy = []
+        
+        for strategy in rent_strategy_map.keys():
+            strategy_df = df[df['estrategia-arrendamento'].apply(
+                lambda x: isinstance(x, list) and strategy in x
+            )]
+            
+            avg_rent = strategy_df['valor-mensal-renda'].mean()
+            if not pd.isna(avg_rent):
+                rent_values_by_strategy.append({
+                    'Estratégia': rent_strategy_map.get(strategy, strategy),
+                    'Renda Média': avg_rent
+                })
+        
+        rent_values_df = pd.DataFrame(rent_values_by_strategy)
+        
+        if not rent_values_df.empty:
+            # Ordenar por valor de renda
+            rent_values_df = rent_values_df.sort_values('Renda Média', ascending=False)
+            
+            fig = px.bar(
+                rent_values_df,
+                x="Estratégia",
+                y="Renda Média",
+                color="Estratégia",
+                color_discrete_sequence=PRIMARY_COLORS,
+                title="Renda Média Mensal por Estratégia de Arrendamento",
+                labels={"Renda Média": "Valor Médio da Renda (€)"}
+            )
+            fig.update_layout(
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                showlegend=False
+            )
+            st.plotly_chart(fig)
+            
+            st.markdown("""
+            Este gráfico mostra a relação entre as estratégias utilizadas para encontrar arrendamento e o valor médio 
+            da renda mensal. Diferentes canais de procura podem estar associados a diferentes segmentos do mercado imobiliário.
+            """)
+    
+    with col2:
+        st.subheader("Estratégias de Compra")
+        
+        # Processar os dados de estratégia de compra
+        buy_strategies = []
+        for strategies in df['estrategia-compra'].dropna():
+            if isinstance(strategies, list):
+                buy_strategies.extend(strategies)
+        
+        buy_strategy_counts = pd.Series(buy_strategies).value_counts().reset_index()
+        buy_strategy_counts.columns = ["Estratégia", "Contagem"]
+        
+        buy_strategy_counts['Estratégia'] = buy_strategy_counts['Estratégia'].map(buy_strategy_map)
+        
+        # Criar gráfico de barras para estratégias de compra
+        fig = px.bar(
+            buy_strategy_counts,
+            x="Estratégia",
+            y="Contagem",
+            color="Estratégia",
+            color_discrete_sequence=PRIMARY_COLORS,
+            title="Estratégias Utilizadas para Compra de Habitação",
+        )
+        fig.update_layout(
+            xaxis_title="Estratégia de Compra",
+            yaxis_title="Número de Pessoas",
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            showlegend=False,
+            xaxis={'categoryorder':'total descending'}
+        )
+        st.plotly_chart(fig)
+        
+        # Adicionar insights sobre as estratégias de compra
+        top_buy_strategy = buy_strategy_counts.iloc[0]['Estratégia']
+        st.markdown(f"""
+        **Principais Conclusões:**
+        - A estratégia mais comum para compra de habitação é através de {top_buy_strategy}
+        - {buy_strategy_counts.iloc[0]['Contagem']} pessoas utilizaram esta estratégia
+        - O mercado de compra em Portugal demonstra padrões distintos em comparação com o mercado de arrendamento
+        """)
+        
+        # Análise adicional: Relação entre estratégia de compra e valor da propriedade
+        st.subheader("Valor de Compra por Estratégia")
+        
+        # Criar um dataframe para armazenar valor médio de compra por estratégia
+        purchase_values_by_strategy = []
+        
+        for strategy in buy_strategy_map.keys():
+            strategy_df = df[df['estrategia-compra'].apply(
+                lambda x: isinstance(x, list) and strategy in x
+            )]
+            
+            avg_purchase = strategy_df['valor-compra'].mean()
+            if not pd.isna(avg_purchase):
+                purchase_values_by_strategy.append({
+                    'Estratégia': buy_strategy_map.get(strategy, strategy),
+                    'Valor Médio': avg_purchase
+                })
+        
+        purchase_values_df = pd.DataFrame(purchase_values_by_strategy)
+        
+        if not purchase_values_df.empty:
+            # Ordenar por valor de compra
+            purchase_values_df = purchase_values_df.sort_values('Valor Médio', ascending=False)
+            
+            fig = px.bar(
+                purchase_values_df,
+                x="Estratégia",
+                y="Valor Médio",
+                color="Estratégia",
+                color_discrete_sequence=PRIMARY_COLORS,
+                title="Valor Médio de Compra por Estratégia",
+                labels={"Valor Médio": "Valor Médio de Compra (€)"}
+            )
+            fig.update_layout(
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                showlegend=False
+            )
+            st.plotly_chart(fig)
+            
+            st.markdown("""
+            Este gráfico mostra a relação entre as estratégias utilizadas para compra de habitação e o valor médio 
+            de compra. As diferentes estratégias podem estar associadas a diferentes segmentos de preço no mercado imobiliário.
+            """)
+    
+    # Análise comparativa entre anos de início de arrendamento/compra e valores
+    st.subheader("Evolução Temporal dos Valores de Habitação")
+    
+    # Criar tabs para separar análises de arrendamento e compra
+    rent_tab, buy_tab = st.tabs(["Evolução de Arrendamento", "Evolução de Compra"])
+    
+    with rent_tab:
+        # Filtrar dados válidos para análise de arrendamento
+        rent_time_df = df[df['ano-inicio-arrendamento'].notna() & 
+                         df['valor-mensal-renda'].notna()].copy()
+        
+        if not rent_time_df.empty:
+            # Agrupar por ano de início do arrendamento
+            rent_time_df['ano-inicio-arrendamento'] = rent_time_df['ano-inicio-arrendamento'].astype(int)
+            rent_year_groups = rent_time_df.groupby('ano-inicio-arrendamento')['valor-mensal-renda'].mean().reset_index()
+            rent_year_groups.columns = ['Ano de Início', 'Renda Média']
+            
+            # Criar gráfico de linha para evolução do valor de renda ao longo do tempo
+            fig = px.line(
+                rent_year_groups,
+                x='Ano de Início',
+                y='Renda Média',
+                markers=True,
+                title='Evolução do Valor Médio da Renda por Ano de Início',
+                labels={'Renda Média': 'Valor Médio da Renda (€)'}
+            )
+            fig.update_layout(
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                xaxis=dict(
+                    tickmode='linear',
+                    tick0=rent_year_groups['Ano de Início'].min(),
+                    dtick=5  # Mostrar ticks a cada 5 anos
+                )
+            )
+            st.plotly_chart(fig)
+            
+            st.markdown("""
+            Este gráfico mostra como o valor médio das rendas mudou ao longo do tempo, representando
+            contratos de arrendamento iniciados em diferentes anos. Note que estes valores refletem
+            os contratos ainda ativos e não necessariamente o valor médio de mercado em cada ano.
+            """)
+    
+    with buy_tab:
+        # Filtrar dados válidos para análise de compra
+        buy_time_df = df[df['ano-compra'].notna() & 
+                        df['valor-compra'].notna()].copy()
+        
+        if not buy_time_df.empty:
+            # Agrupar por ano de compra
+            buy_time_df['ano-compra'] = buy_time_df['ano-compra'].astype(int)
+            buy_year_groups = buy_time_df.groupby('ano-compra')['valor-compra'].mean().reset_index()
+            buy_year_groups.columns = ['Ano de Compra', 'Valor Médio']
+            
+            # Criar gráfico de linha para evolução do valor de compra ao longo do tempo
+            fig = px.line(
+                buy_year_groups,
+                x='Ano de Compra',
+                y='Valor Médio',
+                markers=True,
+                title='Evolução do Valor Médio de Compra por Ano',
+                labels={'Valor Médio': 'Valor Médio de Compra (€)'}
+            )
+            fig.update_layout(
+                plot_bgcolor=BACKGROUND_COLORS[0],
+                paper_bgcolor=BACKGROUND_COLORS[3],
+                xaxis=dict(
+                    tickmode='linear',
+                    tick0=buy_year_groups['Ano de Compra'].min(),
+                    dtick=5  # Mostrar ticks a cada 5 anos
+                )
+            )
+            st.plotly_chart(fig)
+            
+            st.markdown("""
+            Este gráfico mostra como o valor médio das compras de habitação mudou ao longo do tempo,
+            representando aquisições realizadas em diferentes anos. Note que estes valores não estão 
+            ajustados para inflação e refletem os valores reportados pelos respondentes.
+            """)
+    
+    # Análise da relação entre estratégias e satisfação
+    st.subheader("Estratégias e Níveis de Satisfação")
+    
+    # Criar um dataframe para análise de satisfação por estratégia
+    satisfaction_by_strategy = []
+    
+    # Mapear níveis de satisfação para valores numéricos para cálculo de média
+    satisfaction_map = {
+        'muito-satisfeito': 5,
+        'satisfeito': 4,
+        'indiferente': 3,
+        'insatisfeito': 2,
+        'muito-insatisfeito': 1
+    }
+    
+    # Função para extrair o valor numérico da satisfação principal
+    def get_satisfaction_value(satisfacao_list):
+        if isinstance(satisfacao_list, list) and len(satisfacao_list) > 0:
+            return satisfaction_map.get(satisfacao_list[0], np.nan)
+        return np.nan
+    
+    # Aplicar função para criar coluna numérica de satisfação
+    df['satisfaction_numeric'] = df['satisfacao'].apply(get_satisfaction_value)
+    
+    # Analisar satisfação para estratégias de arrendamento
+    for strategy in rent_strategy_map.keys():
+        strategy_df = df[df['estrategia-arrendamento'].apply(
+            lambda x: isinstance(x, list) and strategy in x
+        )]
+        
+        avg_satisfaction = strategy_df['satisfaction_numeric'].mean()
+        if not pd.isna(avg_satisfaction):
+            satisfaction_by_strategy.append({
+                'Estratégia': rent_strategy_map.get(strategy, strategy),
+                'Satisfação Média': avg_satisfaction,
+                'Tipo': 'Arrendamento'
+            })
+    
+    # Analisar satisfação para estratégias de compra
+    for strategy in buy_strategy_map.keys():
+        strategy_df = df[df['estrategia-compra'].apply(
+            lambda x: isinstance(x, list) and strategy in x
+        )]
+        
+        avg_satisfaction = strategy_df['satisfaction_numeric'].mean()
+        if not pd.isna(avg_satisfaction):
+            satisfaction_by_strategy.append({
+                'Estratégia': buy_strategy_map.get(strategy, strategy),
+                'Satisfação Média': avg_satisfaction,
+                'Tipo': 'Compra'
+            })
+    
+    satisfaction_df = pd.DataFrame(satisfaction_by_strategy)
+    
+    if not satisfaction_df.empty:
+        # Criar gráfico comparativo de satisfação por estratégia e tipo
+        fig = px.bar(
+            satisfaction_df,
+            x='Estratégia',
+            y='Satisfação Média',
+            color='Tipo',
+            barmode='group',
+            title='Nível de Satisfação Médio por Estratégia de Habitação',
+            color_discrete_map={
+                'Arrendamento': PRIMARY_COLORS[0],
+                'Compra': PRIMARY_COLORS[1]
+            }
+        )
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            xaxis={'categoryorder':'total descending'},
+            yaxis=dict(
+                range=[0, 5],
+                tickvals=[1, 2, 3, 4, 5],
+                ticktext=['Muito Insatisfeito', 'Insatisfeito', 'Indiferente', 'Satisfeito', 'Muito Satisfeito']
+            )
+        )
+        st.plotly_chart(fig)
+        
+        st.markdown("""
+        Este gráfico mostra a relação entre as estratégias utilizadas para encontrar habitação e o nível 
+        médio de satisfação dos residentes. A comparação entre estratégias de arrendamento e compra revela 
+        insights importantes sobre a eficácia de diferentes abordagens no mercado imobiliário português.
+        """)
