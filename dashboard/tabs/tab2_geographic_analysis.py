@@ -6,39 +6,48 @@ from config import *
 
 def show_geographic_analysis_tab(df):
     """
-    Display the Geographic Analysis tab with enhanced visualizations, explanations, and filters.
+    Este separador fornece uma análise detalhada da distribuição geográfica da habitação em Portugal,
+    revelando padrões regionais em propriedade, arrendamento, custos habitacionais e sobrecarga financeira.
+    
+    As visualizações combinam mapas, gráficos de barras e gráficos de caixa para destacar as variações regionais
+    nos padrões habitacionais e ajudar a identificar regiões com desafios específicos de acessibilidade.
     
     Parameters:
     df (DataFrame): The processed housing data
     """
-    st.header("Geographic Distribution")
+    st.header("Análise da Distribuição Geográfica")
     
-    # Overview metrics
-    st.subheader("Regional Overview")
+    # Introdução com estilo melhorado
+    st.markdown("""
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; margin-bottom: 20px;">
+    <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
+    <p>Esta secção apresenta uma análise geográfica das situações habitacionais em Portugal, 
+    mostrando como os padrões habitacionais variam entre diferentes regiões do país.</p>
+    <ul>
+      <li><strong>Tendências Principais:</strong> Existem variações regionais significativas nas taxas de propriedade, arrendamento e custos habitacionais</li>
+      <li><strong>Variação Regional:</strong> Distritos urbanos mostram padrões habitacionais distintos em comparação com áreas rurais</li>
+      <li><strong>Sobrecarga Habitacional:</strong> A acessibilidade habitacional varia consideravelmente entre diferentes regiões de Portugal</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     with col1:
         total_districts = df['distrito'].nunique()
-        st.metric("Total Districts", total_districts)
+        st.metric("Total de Distritos", total_districts)
     with col2:
         most_expensive_district = df[df['housing_situation'] == 'Renting'].groupby('distrito')['valor-mensal-renda'].mean().idxmax()
-        st.metric("Most Expensive District (Rent)", most_expensive_district.capitalize())
+        st.metric("Distrito Mais Caro (Arrendamento)", most_expensive_district.capitalize())
     with col3:
         highest_ownership = df.groupby('distrito')['housing_situation'].apply(lambda x: (x == 'Owned').mean() * 100).idxmax()
-        st.metric("Highest Ownership Rate", highest_ownership.capitalize())
-    
-    st.markdown("""
-    ### Understanding the Geographic Distribution
-    This section shows how housing situations vary across different districts in Portugal. 
-    The data reveals regional patterns in ownership, rental rates, and housing costs.
-    """)
+        st.metric("Taxa Mais Alta de Propriedade", highest_ownership.capitalize())
     
     # Create map placeholders
     col1, col2 = st.columns([3, 1])
     
     with col1:
         # Districts distribution with improved aesthetics
-        st.subheader("Housing Distribution by District")
+        st.subheader("Distribuição Habitacional por Distrito")
         district_counts = df.groupby(['distrito', 'housing_situation']).size().reset_index(name='count')
         fig = px.bar(
             district_counts,
@@ -46,13 +55,13 @@ def show_geographic_analysis_tab(df):
             y='count',
             color='housing_situation',
             color_discrete_map=HOUSING_COLORS,
-            title='Housing Situations by District',
-            labels={'distrito': 'District', 'count': 'Count', 'housing_situation': 'Housing Situation'}
+            title='Situações Habitacionais por Distrito',
+            labels={'distrito': 'Distrito', 'count': 'Contagem', 'housing_situation': 'Situação Habitacional'}
         )
         fig.update_layout(
-            xaxis_title="District",
-            yaxis_title="Number of Residents",
-            legend_title="Housing Situation",
+            xaxis_title="Distrito",
+            yaxis_title="Número de Residentes",
+            legend_title="Situação Habitacional",
             height=500,
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
@@ -62,30 +71,30 @@ def show_geographic_analysis_tab(df):
         st.plotly_chart(fig)
         
         st.markdown("""
-        **Key Insights:**
-        - The chart shows the distribution of housing situations across Portugal's districts
-        - Areas with higher bars indicate more survey participants from those regions
-        - The color breakdown reveals ownership vs. rental patterns in each district
+        **Principais Insights:**
+        - O gráfico mostra a distribuição das situações habitacionais pelos distritos de Portugal
+        - Áreas com barras mais altas indicam mais participantes do inquérito dessas regiões
+        - A divisão por cores revela padrões de propriedade vs. arrendamento em cada distrito
         """)
         
     with col2:
-        st.subheader("Top Districts")
+        st.subheader("Principais Distritos")
         top_districts = df['distrito'].value_counts().reset_index()
-        top_districts.columns = ['District', 'Count']
-        top_districts['District'] = top_districts['District'].str.capitalize()
+        top_districts.columns = ['Distrito', 'Contagem']
+        top_districts['Distrito'] = top_districts['Distrito'].str.capitalize()
         top_districts = top_districts.head(5)
         
         st.dataframe(top_districts, hide_index=True)
         
         # Add percentage calculation
-        top_districts['Percentage'] = (top_districts['Count'] / top_districts['Count'].sum() * 100).round(1).astype(str) + '%'
+        top_districts['Percentagem'] = (top_districts['Contagem'] / top_districts['Contagem'].sum() * 100).round(1).astype(str) + '%'
         
         # Create a pie chart for top districts
         fig = px.pie(
             top_districts,
-            values='Count',
-            names='District',
-            title='Distribution of Top 5 Districts',
+            values='Contagem',
+            names='Distrito',
+            title='Distribuição dos 5 Principais Distritos',
             color_discrete_sequence=PRIMARY_COLORS
         )
         fig.update_layout(
@@ -97,7 +106,7 @@ def show_geographic_analysis_tab(df):
         st.plotly_chart(fig)
     
     # Housing situation by district
-    st.subheader("Housing Situation Distribution")
+    st.subheader("Distribuição das Situações Habitacionais")
     
     # Calculate percentages
     district_percentages = df.groupby('distrito')['housing_situation'].value_counts(normalize=True).mul(100).round(1).reset_index(name='percentage')
@@ -109,14 +118,14 @@ def show_geographic_analysis_tab(df):
         x='distrito',
         y='percentage',
         color='housing_situation',
-        title='Housing Situation Percentage by District',
-        labels={'distrito': 'District', 'percentage': 'Percentage (%)', 'housing_situation': 'Housing Situation'},
+        title='Percentagem de Situações Habitacionais por Distrito',
+        labels={'distrito': 'Distrito', 'percentage': 'Percentagem (%)', 'housing_situation': 'Situação Habitacional'},
         color_discrete_map=HOUSING_COLORS
     )
     fig.update_layout(
-        xaxis_title="District",
-        yaxis_title="Percentage of Residents",
-        legend_title="Housing Situation",
+        xaxis_title="Distrito",
+        yaxis_title="Percentagem de Residentes",
+        legend_title="Situação Habitacional",
         height=500,
         plot_bgcolor=BACKGROUND_COLORS[0],
         paper_bgcolor=BACKGROUND_COLORS[3],
@@ -126,26 +135,26 @@ def show_geographic_analysis_tab(df):
     st.plotly_chart(fig)
     
     st.markdown("""
-    **What This Shows:**
-    - This chart normalizes the data to show the percentage breakdown of housing situations in each district
-    - Districts with higher ownership rates may indicate more affordable housing markets or different cultural preferences
-    - Areas with high rental percentages may suggest more transient populations or expensive housing markets
+    **O Que Isto Mostra:**
+    - Este gráfico normaliza os dados para mostrar a distribuição percentual das situações habitacionais em cada distrito
+    - Distritos com taxas mais elevadas de propriedade podem indicar mercados habitacionais mais acessíveis ou diferentes preferências culturais
+    - Áreas com altas percentagens de arrendamento podem sugerir populações mais transitórias ou mercados habitacionais mais caros
     """)
     
     # Housing costs by region
-    st.subheader("Housing Costs by Region")
+    st.subheader("Custos Habitacionais por Região")
     
     region_selector = st.selectbox(
-        "Select Region to View Housing Costs",
-        options=["All"] + sorted(pd.Series(df['distrito'].unique()).str.capitalize().tolist())
+        "Selecione uma Região para Ver os Custos Habitacionais",
+        options=["Todas"] + sorted(pd.Series(df['distrito'].unique()).str.capitalize().tolist())
     )
     
-    if region_selector != "All":
+    if region_selector != "Todas":
         region_df = df[df['distrito'].str.capitalize() == region_selector]
-        st.markdown(f"Analyzing housing costs for **{region_selector}** district")
+        st.markdown(f"A analisar custos habitacionais para o distrito de **{region_selector}**")
     else:
         region_df = df
-        st.markdown("Analyzing housing costs across **all districts**")
+        st.markdown("A analisar custos habitacionais em **todos os distritos**")
     
     col1, col2 = st.columns(2)
     
@@ -155,20 +164,20 @@ def show_geographic_analysis_tab(df):
         if not rent_data.empty and 'valor-mensal-renda' in rent_data.columns:
             # Calculate average rent
             avg_rent = rent_data['valor-mensal-renda'].mean().round(2)
-            st.metric("Average Monthly Rent", f"€{avg_rent:.2f}")
+            st.metric("Renda Mensal Média", f"€{avg_rent:.2f}")
             
             fig = px.box(
                 rent_data,
                 x='distrito',
                 y='valor-mensal-renda',
                 color='distrito',
-                title='Monthly Rent by District',
-                labels={'valor-mensal-renda': 'Monthly Rent (€)', 'distrito': 'District'},
+                title='Renda Mensal por Distrito',
+                labels={'valor-mensal-renda': 'Renda Mensal (€)', 'distrito': 'Distrito'},
                 color_discrete_sequence=PRIMARY_COLORS
             )
             fig.update_layout(
-                xaxis_title="District",
-                yaxis_title="Monthly Rent (€)",
+                xaxis_title="Distrito",
+                yaxis_title="Renda Mensal (€)",
                 height=400,
                 plot_bgcolor=BACKGROUND_COLORS[0],
                 paper_bgcolor=BACKGROUND_COLORS[3],
@@ -178,13 +187,13 @@ def show_geographic_analysis_tab(df):
             st.plotly_chart(fig)
             
             st.markdown("""
-            **Rental Market Insights:**
-            - The box plot shows the distribution of monthly rents across districts
-            - The box represents the middle 50% of rent values, with the line showing the median
-            - Outliers (points outside the whiskers) may represent luxury properties or potentially data anomalies
+            **Insights do Mercado de Arrendamento:**
+            - O gráfico de caixa mostra a distribuição das rendas mensais pelos distritos
+            - A caixa representa os 50% centrais dos valores de renda, com a linha a mostrar a mediana
+            - Outliers (pontos fora dos bigodes) podem representar propriedades de luxo ou potencialmente anomalias nos dados
             """)
         else:
-            st.write("No rent data available for the selected filter.")
+            st.write("Não há dados de arrendamento disponíveis para o filtro selecionado.")
     
     with col2:
         # Purchase costs by district
@@ -192,20 +201,20 @@ def show_geographic_analysis_tab(df):
         if not purchase_data.empty and 'valor-compra' in purchase_data.columns:
             # Calculate average purchase price
             avg_purchase = purchase_data['valor-compra'].mean().round(2)
-            st.metric("Average Purchase Price", f"€{avg_purchase:.2f}")
+            st.metric("Preço Médio de Compra", f"€{avg_purchase:.2f}")
             
             fig = px.box(
                 purchase_data,
                 x='distrito',
                 y='valor-compra',
                 color='distrito',
-                title='Property Purchase Price by District',
-                labels={'valor-compra': 'Purchase Price (€)', 'distrito': 'District'},
+                title='Preço de Compra de Imóveis por Distrito',
+                labels={'valor-compra': 'Preço de Compra (€)', 'distrito': 'Distrito'},
                 color_discrete_sequence=SECONDARY_COLORS
             )
             fig.update_layout(
-                xaxis_title="District",
-                yaxis_title="Purchase Price (€)",
+                xaxis_title="Distrito",
+                yaxis_title="Preço de Compra (€)",
                 height=400,
                 plot_bgcolor=BACKGROUND_COLORS[0],
                 paper_bgcolor=BACKGROUND_COLORS[3],
@@ -215,16 +224,16 @@ def show_geographic_analysis_tab(df):
             st.plotly_chart(fig)
             
             st.markdown("""
-            **Property Market Insights:**
-            - The box plot shows the distribution of property purchase prices across districts
-            - Wide boxes indicate greater variability in property prices within that district
-            - The position of the box shows the general price level of that district's housing market
+            **Insights do Mercado Imobiliário:**
+            - O gráfico de caixa mostra a distribuição dos preços de compra de imóveis pelos distritos
+            - Caixas mais largas indicam maior variabilidade nos preços dos imóveis dentro desse distrito
+            - A posição da caixa mostra o nível geral de preços do mercado habitacional desse distrito
             """)
         else:
-            st.write("No purchase data available for the selected filter.")
+            st.write("Não há dados de compra disponíveis para o filtro selecionado.")
     
     # Add rent-to-income ratio analysis
-    st.subheader("Affordability Analysis")
+    st.subheader("Análise de Acessibilidade")
     
     col1, col2 = st.columns(2)
     
@@ -240,17 +249,17 @@ def show_geographic_analysis_tab(df):
                 x='distrito',
                 y='count',
                 color='rent_burden',
-                title='Rent Burden by District',
-                labels={'distrito': 'District', 'count': 'Count', 'rent_burden': 'Rent Burden'},
+                title='Sobrecarga de Renda por Distrito',
+                labels={'distrito': 'Distrito', 'count': 'Contagem', 'rent_burden': 'Sobrecarga de Renda'},
                 category_orders={
                     'rent_burden': ['≤30% (Affordable)', '31-50% (Moderate)', '51-80% (High)', '>80% (Very High)', 'Unknown']
                 },
                 color_discrete_map=RENT_BURDEN_COLORS
             )
             fig.update_layout(
-                xaxis_title="District",
-                yaxis_title="Number of Residents",
-                legend_title="Rent Burden",
+                xaxis_title="Distrito",
+                yaxis_title="Número de Residentes",
+                legend_title="Sobrecarga de Renda",
                 height=500,
                 plot_bgcolor=BACKGROUND_COLORS[0],
                 paper_bgcolor=BACKGROUND_COLORS[3],
@@ -260,13 +269,13 @@ def show_geographic_analysis_tab(df):
             st.plotly_chart(fig)
             
             st.markdown("""
-            **Rent Burden Explained:**
-            - Rent burden shows what percentage of income residents spend on housing
-            - Areas with high proportions of residents spending >30% of income on rent may indicate affordability issues
-            - The generally accepted threshold for affordable housing is spending no more than 30% of income on housing
+            **Explicação da Sobrecarga de Renda:**
+            - A sobrecarga de renda mostra que percentagem do rendimento os residentes gastam em habitação
+            - Áreas com elevadas proporções de residentes a gastar >30% do rendimento em renda podem indicar problemas de acessibilidade
+            - O limiar geralmente aceite para habitação acessível é gastar não mais do que 30% do rendimento em habitação
             """)
         else:
-            st.write("No rent burden data available for analysis.")
+            st.write("Não há dados de sobrecarga de renda disponíveis para análise.")
     
     with col2:
         # Property age by district
@@ -283,13 +292,13 @@ def show_geographic_analysis_tab(df):
                     x='distrito',
                     y='property_age',
                     color='distrito',
-                    title='Property Age by District',
-                    labels={'property_age': 'Property Age (Years)', 'distrito': 'District'},
+                    title='Idade dos Imóveis por Distrito',
+                    labels={'property_age': 'Idade do Imóvel (Anos)', 'distrito': 'Distrito'},
                     color_discrete_sequence=ACCENT_COLORS
                 )
                 fig.update_layout(
-                    xaxis_title="District",
-                    yaxis_title="Property Age (Years)",
+                    xaxis_title="Distrito",
+                    yaxis_title="Idade do Imóvel (Anos)",
                     height=500,
                     plot_bgcolor=BACKGROUND_COLORS[0],
                     paper_bgcolor=BACKGROUND_COLORS[3],
@@ -299,12 +308,12 @@ def show_geographic_analysis_tab(df):
                 st.plotly_chart(fig)
                 
                 st.markdown("""
-                **Property Age Analysis:**
-                - This chart shows the age distribution of owned properties across districts
-                - Newer properties (lower values) may indicate recent development or higher turnover
-                - Older property stocks may suggest established neighborhoods or limited new construction
+                **Análise da Idade dos Imóveis:**
+                - Este gráfico mostra a distribuição da idade dos imóveis próprios pelos distritos
+                - Imóveis mais novos (valores mais baixos) podem indicar desenvolvimento recente ou maior rotatividade
+                - Parques habitacionais mais antigos podem sugerir bairros estabelecidos ou construção nova limitada
                 """)
             else:
-                st.write("No property age data available for analysis.")
+                st.write("Não há dados sobre a idade dos imóveis disponíveis para análise.")
         else:
-            st.write("Property age data not available in the dataset.")
+            st.write("Dados sobre a idade dos imóveis não disponíveis no conjunto de dados.")
