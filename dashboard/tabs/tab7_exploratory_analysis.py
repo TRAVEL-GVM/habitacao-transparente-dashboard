@@ -6,6 +6,16 @@ import numpy as np
 from scipy import stats
 
 def show_exploratory_analysis_tab(df):
+    # Import necessary style configurations
+    from config import (
+        BACKGROUND_COLORS,
+        COLOR_SCALES,
+        PRIMARY_COLORS,
+        SECONDARY_COLORS,
+        ACCENT_COLORS,
+        TEXT_COLORS,
+        CHART_COLORS
+    )
     st.header("Análise Exploratória de Dados")
 
     # Explain what is the purpose of this tab
@@ -271,6 +281,7 @@ def show_exploratory_analysis_tab(df):
                     y="count",
                     title=f"Contagem de {x_axis}",
                     labels={x_axis: x_axis, "count": "Contagem"},
+                    color_discrete_sequence=PRIMARY_COLORS,
                 )
             else:
                 agg_func = {"média": np.mean, "soma": np.sum, "mediana": np.median}[
@@ -284,11 +295,16 @@ def show_exploratory_analysis_tab(df):
                     x=x_axis,
                     y=y_axis,
                     title=f"{agg_option} de {y_axis} por {x_axis}",
+                    color_discrete_sequence=PRIMARY_COLORS,
                 )
 
         elif chart_type == "Histograma":
             fig = px.histogram(
-                filtered_df, x=x_axis, nbins=bins, title=f"Distribuição de {x_axis}"
+                filtered_df, 
+                x=x_axis, 
+                nbins=bins, 
+                title=f"Distribuição de {x_axis}",
+                color_discrete_sequence=SECONDARY_COLORS,
             )
 
         elif chart_type == "Gráfico de Dispersão":
@@ -298,6 +314,7 @@ def show_exploratory_analysis_tab(df):
                 y=y_axis,
                 color=color_option,
                 title=f"{y_axis} vs {x_axis}",
+                color_discrete_sequence=CHART_COLORS if color_option else PRIMARY_COLORS,
             )
 
         elif chart_type == "Gráfico de Caixa":
@@ -306,6 +323,7 @@ def show_exploratory_analysis_tab(df):
                 x=x_axis,
                 y=y_axis,
                 title=f"Distribuição de {y_axis} por {x_axis}",
+                color_discrete_sequence=ACCENT_COLORS,
             )
 
         else:  # Pie Chart
@@ -314,7 +332,17 @@ def show_exploratory_analysis_tab(df):
                 names=value_counts.index,
                 values=value_counts.values,
                 title=f"Distribuição de {x_axis}",
+                color_discrete_sequence=COLOR_SCALES["qualitative"],
             )
+
+        # Apply common chart styling
+        fig.update_layout(
+            plot_bgcolor=BACKGROUND_COLORS[0],
+            paper_bgcolor=BACKGROUND_COLORS[3],
+            font_color=TEXT_COLORS[2],
+            title_font_color=TEXT_COLORS[0],
+            legend_title_font_color=TEXT_COLORS[1],
+        )
 
         # Show the generated chart
         st.plotly_chart(fig, use_container_width=True)
@@ -415,6 +443,12 @@ def show_exploratory_analysis_tab(df):
                     color_continuous_scale="RdBu_r",
                     title="Matriz de Correlação",
                 )
+                fig.update_layout(
+                    plot_bgcolor=BACKGROUND_COLORS[0],
+                    paper_bgcolor=BACKGROUND_COLORS[3],
+                    font_color=TEXT_COLORS[2],
+                    title_font_color=TEXT_COLORS[0],
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
                 # Find the strongest correlations
@@ -480,15 +514,22 @@ def show_exploratory_analysis_tab(df):
                                 x=time_col,
                                 y='mean',
                                 title=f"Média de {trend_var} ao Longo do Tempo",
-                                labels={time_col: time_col, 'mean': f'Média de {trend_var}'}
+                                labels={time_col: time_col, 'mean': f'Média de {trend_var}'},
+                                color_discrete_sequence=[PRIMARY_COLORS[0]],
                             )
                             # Add confidence interval
                             fig.add_scatter(
                                 x=agg_data[time_col],
                                 y=agg_data['median'],
                                 mode='lines',
-                                line=dict(dash='dash', color='red'),
+                                line=dict(dash='dash', color=SECONDARY_COLORS[0]),
                                 name='Mediana'
+                            )
+                            fig.update_layout(
+                                plot_bgcolor=BACKGROUND_COLORS[0],
+                                paper_bgcolor=BACKGROUND_COLORS[3],
+                                font_color=TEXT_COLORS[2],
+                                title_font_color=TEXT_COLORS[0],
                             )
                             st.plotly_chart(fig, use_container_width=True)
                             
@@ -533,7 +574,14 @@ def show_exploratory_analysis_tab(df):
                                 y='value',
                                 color='variable',
                                 title=f"Distribuição de {trend_var} ao Longo do Tempo",
-                                labels={'value': 'Percentagem', 'variable': trend_var}
+                                labels={'value': 'Percentagem', 'variable': trend_var},
+                                color_discrete_sequence=COLOR_SCALES['sequential'],
+                            )
+                            fig.update_layout(
+                                plot_bgcolor=BACKGROUND_COLORS[0],
+                                paper_bgcolor=BACKGROUND_COLORS[3],
+                                font_color=TEXT_COLORS[2],
+                                title_font_color=TEXT_COLORS[0],
                             )
                             st.plotly_chart(fig, use_container_width=True)
                     
@@ -570,13 +618,21 @@ def show_exploratory_analysis_tab(df):
                                     x='Period',
                                     y='Percent_Change',
                                     title=f"Mudança Ano a Ano em {trend_var}",
-                                    labels={'Percent_Change': 'Mudança Percentual (%)'}
+                                    labels={'Percent_Change': 'Mudança Percentual (%)'},
+                                    color_discrete_sequence=[PRIMARY_COLORS[0], PRIMARY_COLORS[1]],
                                 )
                                 
                                 # Add color based on positive/negative change
                                 fig.update_traces(marker_color=yoy_df['Percent_Change'].apply(
-                                    lambda x: 'green' if x > 0 else 'red'
+                                    lambda x: SECONDARY_COLORS[0] if x > 0 else TEXT_COLORS[3]
                                 ))
+                                
+                                fig.update_layout(
+                                    plot_bgcolor=BACKGROUND_COLORS[0],
+                                    paper_bgcolor=BACKGROUND_COLORS[3],
+                                    font_color=TEXT_COLORS[2],
+                                    title_font_color=TEXT_COLORS[0],
+                                )
                                 
                                 st.plotly_chart(fig, use_container_width=True)
                                 
@@ -601,7 +657,14 @@ def show_exploratory_analysis_tab(df):
                             y=trend_var if pd.api.types.is_numeric_dtype(filtered_df[trend_var]) else None,
                             color=time_col,
                             title=f"Distribuição de {trend_var} ao Longo do Tempo",
-                            notched=True
+                            notched=True,
+                            color_discrete_sequence=COLOR_SCALES['sequential'],
+                        )
+                        fig.update_layout(
+                            plot_bgcolor=BACKGROUND_COLORS[0],
+                            paper_bgcolor=BACKGROUND_COLORS[3],
+                            font_color=TEXT_COLORS[2],
+                            title_font_color=TEXT_COLORS[0],
                         )
                         st.plotly_chart(fig, use_container_width=True)
                         
@@ -620,7 +683,14 @@ def show_exploratory_analysis_tab(df):
                                     x=time_col,
                                     y=trend_var,
                                     title=f"Variância em {trend_var} ao Longo do Tempo",
-                                    markers=True
+                                    markers=True,
+                                    color_discrete_sequence=[SECONDARY_COLORS[0]],
+                                )
+                                fig_var.update_layout(
+                                    plot_bgcolor=BACKGROUND_COLORS[0],
+                                    paper_bgcolor=BACKGROUND_COLORS[3],
+                                    font_color=TEXT_COLORS[2],
+                                    title_font_color=TEXT_COLORS[0],
                                 )
                                 st.plotly_chart(fig_var, use_container_width=True)
                                 
