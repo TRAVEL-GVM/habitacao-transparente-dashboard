@@ -1,27 +1,38 @@
-# Primary Colors (Dark to light green shades)
-PRIMARY_COLORS = ["#2e7d32", "#43a047", "#66bb6a", "#a5d6a7"]
+# Primary Colors (More distinct green shades with greater contrast)
+PRIMARY_COLORS = ["#1b5e20", "#388e3c", "#66bb6a", "#a5d6a7"]
 
-# Secondary Colors (Alternative green shades)
-SECONDARY_COLORS = ["#388e3c", "#4caf50", "#81c784", "#c8e6c9"]
+# Secondary Colors (More pleasing green variations)
+SECONDARY_COLORS = ["#2e7d32", "#43a047", "#66bb6a", "#a5d6a7"]
 
-# Neutral Colors (Very light to medium green)
+# Neutral Colors (Light background shades)
 NEUTRAL_COLORS = ["#e8f5e9", "#c8e6c9", "#a5d6a7", "#81c784"]
 
-# Accent Colors (Lime green shades)
-ACCENT_COLORS = ["#689f38", "#8bc34a", "#aed581", "#dcedc8"]
+# Accent Colors (More vibrant and diverse)
+ACCENT_COLORS = ["#7cb342", "#9ccc65", "#c0ca33", "#dce775"]
 
-# Text Colors (Very dark to medium green for text)
-TEXT_COLORS = ["#1b5e20", "#2e7d32", "#388e3c", "#43a047"]
+# Additional Palette (For charts with many series - complementary colors)
+EXTENDED_COLORS = ["#5d4037", "#8d6e63", "#0277bd", "#039be5", "#7b1fa2", "#9c27b0", "#ef6c00", "#f57c00"]
 
-# Background Colors (Very light green to white)
+# Text Colors (Dark to medium for readability)
+TEXT_COLORS = ["#1b5e20", "#2e7d32", "#424242", "#616161"]
+
+# Background Colors (Light green to white)
 BACKGROUND_COLORS = ["#e8f5e9", "#f1f8e9", "#f9fbe7", "#ffffff"]
 
-# Chart Colors (Main colors for visualizations)
+# Chart Colors (Expanded selection for multiple series)
 CHART_COLORS = [
     PRIMARY_COLORS[0],
     SECONDARY_COLORS[0],
     ACCENT_COLORS[0],
+    EXTENDED_COLORS[0],
+    EXTENDED_COLORS[2],
     PRIMARY_COLORS[1],
+    SECONDARY_COLORS[1],
+    ACCENT_COLORS[1],
+    EXTENDED_COLORS[1],
+    EXTENDED_COLORS[3],
+    EXTENDED_COLORS[4],
+    EXTENDED_COLORS[6],
 ]
 
 # Satisfaction Color Scale (Matching design doc exactly)
@@ -33,11 +44,11 @@ SATISFACTION_COLORS = {
     "Very Dissatisfied": "#f44336",  # Red
 }
 
-# Housing Situation Colors (Using primary and accent colors)
+# Housing Situation Colors (Improved green palette)
 HOUSING_COLORS = {
-    "Renting": PRIMARY_COLORS[0],  # Dark green
-    "Owned": SECONDARY_COLORS[0],  # Alternative green
-    "Living with others": ACCENT_COLORS[0],  # Lime green
+    "Renting": "#1b5e20",  # Dark green
+    "Owned": "#2e7d32",  # Medium-dark green
+    "Living with others": "#8bc34a",  # Bright lime green
 }
 
 # Rent Burden Colors (Using a green to red gradient)
@@ -69,10 +80,12 @@ COLOR_SCALES = {
         PRIMARY_COLORS[0],
         SECONDARY_COLORS[0],
         ACCENT_COLORS[0],
+        EXTENDED_COLORS[2],
+        EXTENDED_COLORS[4],
+        EXTENDED_COLORS[6],
         PRIMARY_COLORS[1],
         SECONDARY_COLORS[1],
-        ACCENT_COLORS[1],
-    ],  # Mix of color families
+    ],  # More diverse palette
 }
 
 # Additional color combinations for specific visualizations
