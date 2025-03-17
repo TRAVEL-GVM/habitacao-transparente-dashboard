@@ -13,13 +13,31 @@ from streamlit_folium import folium_static
 sys.path.append(str(Path(__file__).parent.parent))
 from config import BACKGROUND_COLORS, COLOR_SCALES, SATISFACTION_COLORS, TEXT_COLORS
 
-# Create a numeric satisfaction score
+# Create a numeric satisfaction score with Portuguese labels mapping to English values in the data
 satisfaction_scores = {
-    "Very Satisfied": 5,
-    "Satisfied": 4,
-    "Neutral": 3,
-    "Dissatisfied": 2,
-    "Very Dissatisfied": 1,
+    "Very Satisfied": 5,  # muito-satisfeito
+    "Satisfied": 4,      # satisfeito
+    "Neutral": 3,        # indiferente
+    "Dissatisfied": 2,   # insatisfeito
+    "Very Dissatisfied": 1, # muito-insatisfeito
+}
+
+# Mapping between English data values and Portuguese display labels
+satisfaction_pt_labels = {
+    "Very Satisfied": "Muito Satisfeito",
+    "Satisfied": "Satisfeito",
+    "Neutral": "Neutro",
+    "Dissatisfied": "Insatisfeito",
+    "Very Dissatisfied": "Muito Insatisfeito"
+}
+
+# Update SATISFACTION_COLORS with Portuguese labels if needed
+SATISFACTION_COLORS_PT = {
+    "Muito Satisfeito": SATISFACTION_COLORS["Very Satisfied"],
+    "Satisfeito": SATISFACTION_COLORS["Satisfied"],
+    "Neutro": SATISFACTION_COLORS["Neutral"],
+    "Insatisfeito": SATISFACTION_COLORS["Dissatisfied"],
+    "Muito Insatisfeito": SATISFACTION_COLORS["Very Dissatisfied"]
 }
 
 
@@ -100,14 +118,14 @@ def show_satisfaction_levels_tab(df):
 
     # More human-readable income labels for display
     income_labels = {
-        "sem-rendimento": "No Income",
-        "<7001": "Up to €7,000",
-        "7001-12000": "€7,001-€12,000",
-        "12001-20000": "€12,001-€20,000",
-        "20001-35000": "€20,001-€35,000",
-        "35001-50000": "€35,001-€50,000",
-        "50001-80000": "€50,001-€80,000",
-        ">80001": "Over €80,000",
+        "sem-rendimento": "Sem Rendimento",
+        "<7001": "Até €7.000",
+        "7001-12000": "€7.001-€12.000",
+        "12001-20000": "€12.001-€20.000",
+        "20001-35000": "€20.001-€35.000",
+        "35001-50000": "€35.001-€50.000",
+        "50001-80000": "€50.001-€80.000",
+        ">80001": "Mais de €80.000",
     }
 
     # Create a categorical variable for income with proper ordering
@@ -118,25 +136,33 @@ def show_satisfaction_levels_tab(df):
     )
 
     # Interactive filter by satisfaction level
-    st.subheader("Explore Demographics by Satisfaction Level")
+    st.subheader("Explorar Demografia por Nível de Satisfação")
     st.markdown("""
-    This section allows you to explore how satisfaction levels vary across different income groups.
-    Use the filters below to focus on specific satisfaction levels and income brackets to uncover patterns.
+    Esta secção permite explorar como os níveis de satisfação variam entre diferentes grupos de rendimento.
+    Utilize os filtros abaixo para focar em níveis específicos de satisfação e escalões de rendimento para descobrir padrões.
     """)
 
     # Two-column layout for filters
     col1, col2 = st.columns(2)
 
     with col1:
-        selected_satisfaction = st.multiselect(
-            "Select Satisfaction Levels",
-            options=df["satisfaction_level"].dropna().unique(),
-            default=df["satisfaction_level"].dropna().unique(),
+        # Create a list of satisfaction levels with translated display but keep original values for filtering
+        satisfaction_options = [(level, satisfaction_pt_labels[level]) 
+                               for level in df["satisfaction_level"].dropna().unique()]
+        
+        selected_satisfaction_display = st.multiselect(
+            "Selecione Níveis de Satisfação",
+            options=[option[1] for option in satisfaction_options],
+            default=[option[1] for option in satisfaction_options],
         )
+        
+        # Convert back to original values for filtering
+        selected_satisfaction = [level[0] for level in satisfaction_options 
+                                if level[1] in selected_satisfaction_display]
 
     with col2:
         selected_income = st.multiselect(
-            "Select Income Brackets",
+            "Selecione Escalões de Rendimento",
             options=[
                 income_labels[inc]
                 for inc in income_order
@@ -169,11 +195,11 @@ def show_satisfaction_levels_tab(df):
         filtered_df = df
 
     # Income vs. Satisfaction Analysis
-    st.subheader("Income vs. Satisfaction Analysis")
+    st.subheader("Análise de Rendimento vs. Satisfação")
 
     # Create tabs for different visualizations
     income_tab1, income_tab2, income_tab3 = st.tabs(
-        ["Distribution", "Average Satisfaction", "Detailed Analysis"]
+        ["Distribuição", "Satisfação Média", "Análise Detalhada"]
     )
 
     with income_tab1:
@@ -191,16 +217,19 @@ def show_satisfaction_levels_tab(df):
         income_satisfaction.index = income_satisfaction.index.map(
             lambda x: income_labels.get(x, x)
         )
+        
+        # Replace English column names with Portuguese labels
+        income_satisfaction.columns = [satisfaction_pt_labels.get(col, col) for col in income_satisfaction.columns]
 
         fig1 = px.bar(
             income_satisfaction,
             barmode="stack",
-            title="Satisfaction Distribution by Income Bracket (%)",
-            labels={"income_category": "Annual Income", "value": "Percentage"},
-            color_discrete_map=SATISFACTION_COLORS,
+            title="Distribuição de Satisfação por Escalão de Rendimento (%)",
+            labels={"income_category": "Rendimento Anual", "value": "Percentagem"},
+            color_discrete_map=SATISFACTION_COLORS_PT,
         )
         fig1.update_layout(
-            legend_title="Satisfaction Level",
+            legend_title="Nível de Satisfação",
             height=500,
             plot_bgcolor=BACKGROUND_COLORS[0],
             paper_bgcolor=BACKGROUND_COLORS[3],
@@ -221,19 +250,19 @@ def show_satisfaction_levels_tab(df):
             .mean()
             .reset_index()
         )
-        avg_satisfaction.columns = ["Income Bracket", "Average Satisfaction Score"]
+        avg_satisfaction.columns = ["Escalão de Rendimento", "Pontuação Média de Satisfação"]
 
         # Replace with readable labels
-        avg_satisfaction["Income Bracket"] = avg_satisfaction["Income Bracket"].map(
+        avg_satisfaction["Escalão de Rendimento"] = avg_satisfaction["Escalão de Rendimento"].map(
             lambda x: income_labels.get(x, x)
         )
 
         fig2 = px.bar(
             avg_satisfaction,
-            x="Income Bracket",
-            y="Average Satisfaction Score",
-            title="Average Satisfaction Score by Income Bracket",
-            color="Average Satisfaction Score",
+            x="Escalão de Rendimento",
+            y="Pontuação Média de Satisfação",
+            title="Pontuação Média de Satisfação por Escalão de Rendimento",
+            color="Pontuação Média de Satisfação",
             color_continuous_scale=COLOR_SCALES["sequential"],
             text_auto=".2f",
         )
@@ -252,9 +281,9 @@ def show_satisfaction_levels_tab(df):
         )
 
         st.metric(
-            label="Income-Satisfaction Correlation",
+            label="Correlação Rendimento-Satisfação",
             value=f"{corr:.2f}",
-            delta=f"{'Positive' if corr > 0 else 'Negative'} correlation",
+            delta=f"Correlação {'positiva' if corr > 0 else 'negativa'}",
             delta_color="normal",
         )
 
@@ -268,32 +297,44 @@ def show_satisfaction_levels_tab(df):
                 filtered_df["rendimento_numerical"],
                 bins=[0, 7000, 12000, 20000, 35000, 50000, 80000, float("inf")],
                 labels=[
-                    "No/Low Income",
+                    "Sem/Baixo Rendimento",
                     "€7K-€12K",
                     "€12K-€20K",
                     "€20K-€35K",
                     "€35K-€50K",
                     "€50K-€80K",
-                    "Over €80K",
+                    "Mais de €80K",
                 ],
             )
 
             # Handle NaN values in 'area_numerical' column
             filtered_df["area_numerical"] = filtered_df["area_numerical"].fillna(0)
 
+            # Create a mapping for housing situation labels
+            housing_situation_pt = {
+                "Renting": "Arrendamento",
+                "Owned": "Propriedade",
+                "Living with others": "A viver com outros"
+            }
+            
+            # Create a new copy with Portuguese housing situation labels for visualization
+            viz_df = filtered_df.copy()
+            viz_df["housing_situation_pt"] = viz_df["housing_situation"].map(housing_situation_pt)
+
             # Scatter plot with better grouping and labels
             fig3 = px.scatter(
-                filtered_df,
+                viz_df,
                 x="rendimento_numerical",
                 y="satisfaction_score",
-                color="housing_situation",
+                color="housing_situation_pt",  # Use Portuguese labels
                 size="area_numerical",
                 hover_data=["distrito", "concelho", "income_group"],
                 opacity=0.7,
-                title="Income vs. Satisfaction (Size = Living Area)",
+                title="Rendimento vs. Satisfação (Tamanho = Área Habitacional)",
                 labels={
-                    "rendimento_numerical": "Annual Income (€)",
-                    "satisfaction_score": "Satisfaction Score (1-5)",
+                    "rendimento_numerical": "Rendimento Anual (€)",
+                    "satisfaction_score": "Pontuação de Satisfação (1-5)",
+                    "housing_situation_pt": "Situação Habitacional"  # Update label
                 },
             )
 
@@ -308,20 +349,20 @@ def show_satisfaction_levels_tab(df):
 
         with col2:
             # Key insights based on the data with improved income grouping
-            st.subheader("Key Insights")
+            st.subheader("Insights Principais")
 
             # Define income groups for analysis
             income_groups = {
-                "Low Income": filtered_df[filtered_df["rendimento_numerical"] < 12000],
-                "Medium Income": filtered_df[
+                "Baixo Rendimento": filtered_df[filtered_df["rendimento_numerical"] < 12000],
+                "Rendimento Médio": filtered_df[
                     (filtered_df["rendimento_numerical"] >= 12000)
                     & (filtered_df["rendimento_numerical"] < 35000)
                 ],
-                "High Income": filtered_df[
+                "Rendimento Alto": filtered_df[
                     (filtered_df["rendimento_numerical"] >= 35000)
                     & (filtered_df["rendimento_numerical"] < 80000)
                 ],
-                "Very High Income": filtered_df[
+                "Rendimento Muito Alto": filtered_df[
                     filtered_df["rendimento_numerical"] >= 80000
                 ],
             }
@@ -346,19 +387,19 @@ def show_satisfaction_levels_tab(df):
                     ownership_by_income[group] = (owned, rented)
 
             # Display metrics
-            st.markdown("**Satisfaction by Income Group:**")
+            st.markdown("**Satisfação por Grupo de Rendimento:**")
             for group, score in income_group_satisfaction.items():
                 st.metric(label=group, value=f"{score:.2f}/5")
 
-            st.markdown("**Income-Ownership Interaction:**")
+            st.markdown("**Interação Rendimento-Propriedade:**")
             for group, (owned, rented) in ownership_by_income.items():
                 if not (pd.isna(owned) or pd.isna(rented)):
                     st.markdown(
-                        f"**{group}**: Owned {owned:.2f} vs Rented {rented:.2f} (Diff: {owned - rented:.2f})"
+                        f"**{group}**: Própria {owned:.2f} vs Arrendada {rented:.2f} (Dif: {owned - rented:.2f})"
                     )
 
     # Overview of satisfaction by housing situation
-    st.subheader("Housing Satisfaction by Situation Type")
+    st.subheader("Satisfação Habitacional por Tipo de Situação")
 
     col1, col2 = st.columns([3, 2])
 
@@ -366,6 +407,11 @@ def show_satisfaction_levels_tab(df):
         # Create a heatmap of satisfaction by housing situation
         satisfaction_pivot = pd.crosstab(
             df["housing_situation"], df["satisfaction_level"]
+        )
+
+        # Map housing situation names to Portuguese
+        satisfaction_pivot.index = satisfaction_pivot.index.map(
+            lambda x: housing_situation_pt.get(x, x)
         )
 
         # Reorder columns for better visualization
@@ -380,16 +426,19 @@ def show_satisfaction_levels_tab(df):
             col for col in ordered_cols if col in satisfaction_pivot.columns
         ]
         satisfaction_pivot = satisfaction_pivot[ordered_cols]
+        
+        # Translate column names to Portuguese
+        satisfaction_pivot.columns = [satisfaction_pt_labels.get(col, col) for col in satisfaction_pivot.columns]
 
         fig = px.imshow(
             satisfaction_pivot,
             text_auto=True,
             color_continuous_scale=COLOR_SCALES["sequential"],
-            title="Satisfaction Levels by Housing Situation",
+            title="Níveis de Satisfação por Situação Habitacional",
             labels={
-                "x": "Satisfaction Level",
-                "y": "Housing Situation",
-                "color": "Count",
+                "x": "Nível de Satisfação",
+                "y": "Situação Habitacional",
+                "color": "Contagem",
             },
         )
         fig.update_layout(
@@ -403,23 +452,28 @@ def show_satisfaction_levels_tab(df):
 
         # Add explanation for the heatmap
         st.markdown("""
-        **Insight:** This heatmap shows the distribution of satisfaction levels across different housing situations. 
-        Darker blue indicates higher counts. Homeowners tend to report higher satisfaction levels compared to renters, 
-        likely due to greater housing security and control over their living space.
+        **Insight:** Este mapa de calor mostra a distribuição dos níveis de satisfação entre diferentes situações habitacionais. 
+        O azul mais escuro indica contagens mais elevadas. Os proprietários tendem a reportar níveis de satisfação mais elevados em comparação com os arrendatários, 
+        provavelmente devido a maior segurança habitacional e controlo sobre o seu espaço habitacional.
         """)
 
     with col2:
-        # Pie chart of overall satisfaction
-        satisfaction_counts = df["satisfaction_level"].value_counts().reset_index()
-        satisfaction_counts.columns = ["Satisfaction Level", "Count"]
+        # Pie chart of overall satisfaction - Create a copy with translated labels
+        satisfaction_counts_df = df["satisfaction_level"].value_counts().reset_index()
+        satisfaction_counts_df.columns = ["Nível de Satisfação", "Contagem"]
+        
+        # Map English to Portuguese satisfaction levels
+        satisfaction_counts_df["Nível de Satisfação"] = satisfaction_counts_df["Nível de Satisfação"].map(
+            satisfaction_pt_labels
+        )
 
         fig = px.pie(
-            satisfaction_counts,
-            values="Count",
-            names="Satisfaction Level",
-            color="Satisfaction Level",
-            color_discrete_map=SATISFACTION_COLORS,
-            title="Overall Satisfaction Distribution",
+            satisfaction_counts_df,
+            values="Contagem",
+            names="Nível de Satisfação",
+            color="Nível de Satisfação",
+            color_discrete_map=SATISFACTION_COLORS_PT,
+            title="Distribuição Geral de Satisfação",
         )
         fig.update_layout(
             plot_bgcolor=BACKGROUND_COLORS[3],
@@ -432,52 +486,50 @@ def show_satisfaction_levels_tab(df):
         # Calculate and display the percentage of satisfied vs dissatisfied
         satisfied_pct = (
             satisfaction_counts[
-                satisfaction_counts["Satisfaction Level"].isin(
+                satisfaction_counts.index.isin(
                     ["Very Satisfied", "Satisfied"]
                 )
-            ]["Count"].sum()
-            / satisfaction_counts["Count"].sum()
+            ].sum()
             * 100
         )
         dissatisfied_pct = (
             satisfaction_counts[
-                satisfaction_counts["Satisfaction Level"].isin(
+                satisfaction_counts.index.isin(
                     ["Dissatisfied", "Very Dissatisfied"]
                 )
-            ]["Count"].sum()
-            / satisfaction_counts["Count"].sum()
+            ].sum()
             * 100
         )
 
-        st.metric("Overall Satisfaction Rate", f"{satisfied_pct:.1f}%")
-        st.metric("Overall Dissatisfaction Rate", f"{dissatisfied_pct:.1f}%")
+        st.metric("Taxa de Satisfação Geral", f"{satisfied_pct:.1f}%")
+        st.metric("Taxa de Insatisfação Geral", f"{dissatisfied_pct:.1f}%")
 
         st.markdown("""
-        **Insight:** The pie chart illustrates the overall distribution of housing satisfaction. 
-        The satisfaction rate indicates the percentage of respondents who are either "Satisfied" or "Very Satisfied" 
-        with their current housing situation.
+        **Insight:** O gráfico circular ilustra a distribuição geral da satisfação habitacional. 
+        A taxa de satisfação indica a percentagem de inquiridos que estão "Satisfeitos" ou "Muito Satisfeitos" 
+        com a sua situação habitacional atual.
         """)
 
     # Reasons for dissatisfaction
-    st.subheader("Common Reasons for Dissatisfaction")
+    st.subheader("Razões Comuns para a Insatisfação")
     st.markdown("""
-    Understanding why people are dissatisfied with their housing helps identify key areas for policy intervention.
-    The chart below shows the most common reasons cited by respondents who expressed dissatisfaction.
+    Compreender porque as pessoas estão insatisfeitas com a sua habitação ajuda a identificar áreas-chave para intervenção política.
+    O gráfico abaixo mostra as razões mais comuns citadas pelos inquiridos que expressaram insatisfação.
     """)
 
     # Extract dissatisfaction reasons
     dissatisfaction_cols = [col for col in df.columns if col.startswith("reason_")]
     reason_mapping = {
-        "reason_pago-demasiado": "Paying too much",
-        "reason_falta-espaco": "Lack of space",
-        "reason_habitacao-mau-estado": "Poor housing condition",
-        "reason_vivo-longe": "Living far from work/amenities",
-        "reason_quero-independecia": "Want independence",
-        "reason_dificuldades-financeiras": "Financial difficulties",
-        "reason_financeiramente-dependente": "Financially dependent",
-        "reason_vivo-longe-de-transportes": "Far from transportation",
-        "reason_vivo-zona-insegura": "Living in unsafe area",
-        "reason_partilho-casa-com-desconhecidos": "Sharing with strangers",
+        "reason_pago-demasiado": "Pago demasiado",
+        "reason_falta-espaco": "Falta de espaço",
+        "reason_habitacao-mau-estado": "Habitação em mau estado",
+        "reason_vivo-longe": "Vivo longe do trabalho/serviços",
+        "reason_quero-independecia": "Quero independência",
+        "reason_dificuldades-financeiras": "Dificuldades financeiras",
+        "reason_financeiramente-dependente": "Dependência financeira",
+        "reason_vivo-longe-de-transportes": "Longe de transportes",
+        "reason_vivo-zona-insegura": "Zona insegura",
+        "reason_partilho-casa-com-desconhecidos": "Partilho casa com desconhecidos",
     }
 
     # Calculate frequencies of each reason
@@ -487,18 +539,18 @@ def show_satisfaction_levels_tab(df):
             reason_counts[reason_mapping[col]] = df[col].sum()
 
     reason_df = pd.DataFrame(
-        {"Reason": list(reason_counts.keys()), "Count": list(reason_counts.values())}
-    ).sort_values("Count", ascending=False)
+        {"Razão": list(reason_counts.keys()), "Contagem": list(reason_counts.values())}
+    ).sort_values("Contagem", ascending=False)
 
     # Create horizontal bar chart
     fig = px.bar(
         reason_df,
-        y="Reason",
-        x="Count",
+        y="Razão",
+        x="Contagem",
         orientation="h",
-        color="Count",
+        color="Contagem",
         color_continuous_scale=COLOR_SCALES["sequential"],
-        title="Reasons for Housing Dissatisfaction",
+        title="Razões para Insatisfação Habitacional",
     )
     fig.update_layout(
         plot_bgcolor=BACKGROUND_COLORS[0],
@@ -509,29 +561,37 @@ def show_satisfaction_levels_tab(df):
     st.plotly_chart(fig)
 
     # Add explanation for the dissatisfaction reasons
-    top_reasons = reason_df.head(3)["Reason"].tolist()
+    top_reasons = reason_df.head(3)["Razão"].tolist()
     st.markdown(f"""
-    **Key Findings:**
-    - The top three reasons for dissatisfaction are: {", ".join(top_reasons)}
-    - Financial concerns (cost burden and financial difficulties) are prominent factors in housing dissatisfaction
-    - Location issues (distance from work/amenities and transportation) significantly impact satisfaction
-    - Housing quality and space constraints also play important roles in dissatisfaction
+    **Conclusões Principais:**
+    - As três principais razões para insatisfação são: {", ".join(top_reasons)}
+    - Preocupações financeiras (sobrecarga de custos e dificuldades financeiras) são fatores proeminentes na insatisfação habitacional
+    - Problemas de localização (distância do trabalho/serviços e transportes) afetam significativamente a satisfação
+    - A qualidade da habitação e as limitações de espaço também desempenham papéis importantes na insatisfação
     
-    These insights suggest that policy interventions should focus on affordability, location efficiency, and housing quality.
+    Estas conclusões sugerem que as intervenções políticas devem focar-se na acessibilidade, eficiência de localização e qualidade habitacional.
     """)
 
     # Interactive filter by satisfaction level
-    st.subheader("Explore Demographics by Satisfaction Level")
+    st.subheader("Explorar Demografia por Nível de Satisfação")
     st.markdown("""
-    This section allows you to explore how satisfaction levels vary across different demographic groups.
-    Use the multiselect filter below to focus on specific satisfaction levels and see how they relate to income and housing characteristics.
+    Esta secção permite explorar como os níveis de satisfação variam entre diferentes grupos demográficos.
+    Utilize o filtro multisseleção abaixo para focar em níveis específicos de satisfação e ver como se relacionam com o rendimento e características habitacionais.
     """)
 
-    selected_satisfaction = st.multiselect(
-        "Select Satisfaction Levels to Explore",
-        options=df["satisfaction_level"].unique(),
-        default=df["satisfaction_level"].unique(),
+    # Create a list of satisfaction levels with translated display but keep original values for filtering
+    satisfaction_options = [(level, satisfaction_pt_labels.get(level, level)) 
+                            for level in df["satisfaction_level"].unique()]
+    
+    selected_satisfaction_display = st.multiselect(
+        "Selecione Níveis de Satisfação para Explorar",
+        options=[option[1] for option in satisfaction_options],
+        default=[option[1] for option in satisfaction_options],
     )
+    
+    # Convert back to original values for filtering
+    selected_satisfaction = [level[0] for level in satisfaction_options 
+                             if level[1] in selected_satisfaction_display]
 
     if selected_satisfaction:
         filtered_df = df[df["satisfaction_level"].isin(selected_satisfaction)]
@@ -539,7 +599,7 @@ def show_satisfaction_levels_tab(df):
         filtered_df = df
 
     # Income vs. satisfaction
-    st.subheader("Income vs. Satisfaction")
+    st.subheader("Rendimento vs. Satisfação")
     # Satisfaction by income
     income_satisfaction = (
         filtered_df.groupby("rendimento-anual")["satisfaction_level"]
@@ -547,12 +607,15 @@ def show_satisfaction_levels_tab(df):
         .unstack()
         .fillna(0)
     )
+    
+    # Convert column names to Portuguese
+    income_satisfaction.columns = [satisfaction_pt_labels.get(col, col) for col in income_satisfaction.columns]
 
     fig = px.bar(
         income_satisfaction,
         barmode="stack",
-        title="Satisfaction Levels by Income Bracket",
-        labels={"rendimento-anual": "Annual Income (€)", "value": "Count"},
+        title="Níveis de Satisfação por Escalão de Rendimento",
+        labels={"rendimento-anual": "Rendimento Anual (€)", "value": "Contagem"},
     )
     st.plotly_chart(fig)
 
@@ -565,17 +628,17 @@ def show_satisfaction_levels_tab(df):
     corr = filtered_df["rendimento_numerical"].corr(filtered_df["satisfaction_score"])
 
     st.markdown(f"""
-    Income-Satisfaction Relationship:
-    - Correlation between income and satisfaction: {corr:.2f}
-    - Higher income brackets tend to report higher satisfaction levels
-    - This suggests that financial resources play a significant role in housing satisfaction
+    Relação Rendimento-Satisfação:
+    - Correlação entre rendimento e satisfação: {corr:.2f}
+    - Escalões de rendimento mais elevados tendem a reportar níveis de satisfação mais elevados
+    - Isto sugere que os recursos financeiros desempenham um papel significativo na satisfação habitacional
     """)
 
     # Correlation between rent burden and satisfaction for renters
-    st.subheader("Rent Burden vs. Satisfaction")
+    st.subheader("Sobrecarga de Renda vs. Satisfação")
     st.markdown("""
-    This analysis examines how the proportion of income spent on rent affects satisfaction levels.
-    Rent burden is a critical indicator of housing affordability and can significantly impact quality of life.
+    Esta análise examina como a proporção do rendimento gasto em renda afeta os níveis de satisfação.
+    A sobrecarga de renda é um indicador crítico da acessibilidade habitacional e pode afetar significativamente a qualidade de vida.
     """)
 
     renters_df = filtered_df[filtered_df["housing_situation"] == "Renting"]
@@ -588,8 +651,13 @@ def show_satisfaction_levels_tab(df):
         rent_satisfaction_melted = pd.melt(
             rent_satisfaction,
             id_vars=["rent_burden"],
-            var_name="Satisfaction Level",
-            value_name="Count",
+            var_name="Nível de Satisfação",
+            value_name="Contagem",
+        )
+        
+        # Map English satisfaction levels to Portuguese in melted dataframe
+        rent_satisfaction_melted["Nível de Satisfação"] = rent_satisfaction_melted["Nível de Satisfação"].map(
+            satisfaction_pt_labels
         )
 
         # Create an ordered category for rent burden
@@ -600,22 +668,37 @@ def show_satisfaction_levels_tab(df):
             ">80% (Very High)",
             "Unknown",
         ]
+        
+        # Translate rent burden categories
+        rent_burden_pt = {
+            "≤30% (Affordable)": "≤30% (Acessível)",
+            "31-50% (Moderate)": "31-50% (Moderada)",
+            "51-80% (High)": "51-80% (Alta)",
+            ">80% (Very High)": ">80% (Muito Alta)",
+            "Unknown": "Desconhecida"
+        }
+        
         rent_satisfaction_melted["rent_burden"] = pd.Categorical(
             rent_satisfaction_melted["rent_burden"],
             categories=rent_burden_order,
             ordered=True,
+        )
+        
+        # Apply translation to display labels while keeping original categories for ordering
+        rent_satisfaction_melted["rent_burden_pt"] = rent_satisfaction_melted["rent_burden"].map(
+            lambda x: rent_burden_pt.get(x, x)
         )
 
         rent_satisfaction_melted = rent_satisfaction_melted.sort_values("rent_burden")
 
         fig = px.bar(
             rent_satisfaction_melted,
-            x="rent_burden",
-            y="Count",
-            color="Satisfaction Level",
-            color_discrete_map=SATISFACTION_COLORS,
-            title="Satisfaction Levels by Rent Burden (% of Income)",
-            labels={"rent_burden": "Rent as % of Income"},
+            x="rent_burden_pt",  # Use Portuguese labels for display
+            y="Contagem",
+            color="Nível de Satisfação",
+            color_discrete_map=SATISFACTION_COLORS_PT,
+            title="Níveis de Satisfação por Sobrecarga de Renda (% do Rendimento)",
+            labels={"rent_burden_pt": "Renda como % do Rendimento"},
         )
         fig.update_layout(
             plot_bgcolor=BACKGROUND_COLORS[0],
@@ -640,33 +723,39 @@ def show_satisfaction_levels_tab(df):
         lowest_satisfaction = avg_satisfaction_by_burden.loc[
             avg_satisfaction_by_burden["satisfaction_score"].idxmin()
         ]
+        
+        # Translate burden categories for display
+        highest_satisfaction_cat = rent_burden_pt.get(highest_satisfaction["rent_burden"], 
+                                                    highest_satisfaction["rent_burden"])
+        lowest_satisfaction_cat = rent_burden_pt.get(lowest_satisfaction["rent_burden"], 
+                                                   lowest_satisfaction["rent_burden"])
 
         st.markdown(f"""
-        **Rent Burden Analysis:**
-        - The most affordable rent burden category (≤30%) shows the highest satisfaction rates with an average score of {highest_satisfaction["satisfaction_score"]:.2f}
-        - Satisfaction decreases as rent burden increases, with the steepest decline occurring when rent exceeds 50% of income
-        - Renters spending over 80% of their income on housing show the lowest satisfaction levels with an average score of {lowest_satisfaction["satisfaction_score"]:.2f}
-        - The 30% threshold (commonly used as a measure of housing affordability) appears to be a meaningful marker for satisfaction
+        **Análise de Sobrecarga de Renda:**
+        - A categoria de sobrecarga de renda mais acessível ({highest_satisfaction_cat}) mostra as maiores taxas de satisfação com uma pontuação média de {highest_satisfaction["satisfaction_score"]:.2f}
+        - A satisfação diminui à medida que a sobrecarga de renda aumenta, com o declínio mais acentuado ocorrendo quando a renda excede 50% do rendimento
+        - Os arrendatários que gastam mais de 80% do seu rendimento em habitação mostram os níveis de satisfação mais baixos com uma pontuação média de {lowest_satisfaction["satisfaction_score"]:.2f}
+        - O limiar de 30% (comummente utilizado como medida de acessibilidade habitacional) parece ser um marcador significativo para a satisfação
         
-        This analysis supports the importance of rent control and affordable housing policies to improve overall housing satisfaction.
+        Esta análise suporta a importância de políticas de controlo de rendas e habitação acessível para melhorar a satisfação habitacional geral.
         """)
     else:
-        st.write("No rental data available for the selected satisfaction levels.")
+        st.write("Não há dados de arrendamento disponíveis para os níveis de satisfação selecionados.")
 
     # Satisfaction by district - map visualization
-    st.subheader("Geographic Distribution of Satisfaction")
+    st.subheader("Distribuição Geográfica da Satisfação")
     st.markdown("""
-    The following visualizations show how housing satisfaction varies across different regions of Portugal.
-    These geographic patterns can help identify areas that may require targeted housing policies.
+    As seguintes visualizações mostram como a satisfação habitacional varia entre diferentes regiões de Portugal.
+    Estes padrões geográficos podem ajudar a identificar áreas que possam requerer políticas habitacionais direcionadas.
     """)
 
-    # Define satisfaction weights
+    # Define satisfaction weights with Portuguese descriptions
     satisfaction_weights = {
-        "Very Satisfied": 2,
-        "Satisfied": 1,
-        "Neutral": 0,
-        "Dissatisfied": -1,
-        "Very Dissatisfied": -2,
+        "Very Satisfied": 2,  # Muito Satisfeito
+        "Satisfied": 1,       # Satisfeito
+        "Neutral": 0,         # Neutro
+        "Dissatisfied": -1,   # Insatisfeito
+        "Very Dissatisfied": -2, # Muito Insatisfeito
     }
 
     # Convert satisfaction levels to numeric scores
@@ -691,18 +780,18 @@ def show_satisfaction_levels_tab(df):
         y="satisfaction_score",
         color="satisfaction_score",
         color_continuous_scale="RdYlGn",
-        title="Average Satisfaction Score by District",
+        title="Pontuação Média de Satisfação por Distrito",
         labels={
-            "distrito": "District",
-            "satisfaction_score": "Satisfaction Score (-2 to +2)",
+            "distrito": "Distrito",
+            "satisfaction_score": "Pontuação de Satisfação (-2 a +2)",
         },
         hover_data=["count"],  # Include count in hover information
     )
 
     # Improve the layout
     fig.update_layout(
-        xaxis_title="District",
-        yaxis_title="Satisfaction Score (-2 to +2)",
+        xaxis_title="Distrito",
+        yaxis_title="Pontuação de Satisfação (-2 a +2)",
         yaxis=dict(
             tickmode="linear",
             tick0=-2,
@@ -721,19 +810,19 @@ def show_satisfaction_levels_tab(df):
     lowest_district = district_satisfaction.iloc[-1]["distrito"]
 
     st.markdown(f"""
-    **Geographic Insights:**
-    - {highest_district} shows the highest average satisfaction score
-    - {lowest_district} shows the lowest average satisfaction score
-    - Urban areas tend to have more varied satisfaction levels, likely due to higher housing costs but better amenities
-    - Rural areas show patterns of either high satisfaction (affordable housing, quality of life) or low satisfaction (lack of services, employment opportunities)
+    **Insights Geográficos:**
+    - {highest_district} apresenta a pontuação média de satisfação mais elevada
+    - {lowest_district} apresenta a pontuação média de satisfação mais baixa
+    - As áreas urbanas tendem a ter níveis de satisfação mais variados, provavelmente devido a custos habitacionais mais elevados mas melhores serviços
+    - As áreas rurais apresentam padrões de satisfação elevada (habitação acessível, qualidade de vida) ou baixa satisfação (falta de serviços, oportunidades de emprego)
     """)
 
     # Map visualization using GeoJSON data for Portuguese districts
-    st.subheader("Satisfaction Map of Portugal")
+    st.subheader("Mapa de Satisfação de Portugal")
     st.markdown("""
-    This interactive map visualizes housing satisfaction levels across Portugal's districts.
-    Green areas indicate higher satisfaction, while red areas show regions with lower satisfaction scores.
-    Hover over districts to see their names, and click for detailed satisfaction statistics.
+    Este mapa interativo visualiza os níveis de satisfação habitacional nos distritos de Portugal.
+    Áreas verdes indicam maior satisfação, enquanto áreas vermelhas mostram regiões com pontuações de satisfação mais baixas.
+    Passe o cursor sobre os distritos para ver os seus nomes, e clique para estatísticas detalhadas de satisfação.
     """)
 
     # Custom function to create a more informative popup with statistics and styling
@@ -741,19 +830,19 @@ def show_satisfaction_levels_tab(df):
         """Create an HTML popup with styled district information."""
         # Determine satisfaction description and color based on score
         if score >= 1.5:
-            description = "Very High Satisfaction"
+            description = "Satisfação Muito Alta"
             color = "#1a9850"
         elif score >= 0.5:
-            description = "High Satisfaction"
+            description = "Satisfação Alta"
             color = "#91cf60"
         elif score >= -0.5:
-            description = "Neutral Satisfaction"
+            description = "Satisfação Neutra"
             color = "#fee08b"
         elif score >= -1.5:
-            description = "Low Satisfaction"
+            description = "Satisfação Baixa"
             color = "#fc8d59"
         else:
-            description = "Very Low Satisfaction"
+            description = "Satisfação Muito Baixa"
             color = "#d73027"
 
         # Create HTML with better styling
@@ -761,16 +850,16 @@ def show_satisfaction_levels_tab(df):
         <div style="font-family: Arial, sans-serif; padding: 2px; ">
             <h3 style="margin-top: 0; margin-bottom: 10px; color: #333; border-bottom: 2px solid {color};">{district_name.capitalize()}</h3>
             <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="font-weight: bold;">Satisfaction Score:</span>
+                <span style="font-weight: bold;">Pontuação de Satisfação:</span>
                 <span style="background-color: {color}; color: white; padding: 2px 8px; border-radius: 10px;">{score:.2f}</span>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="font-weight: bold;">Status:</span>
+                <span style="font-weight: bold;">Estado:</span>
                 <span>{description}</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
-                <span style="font-weight: bold;">Sample Size:</span>
-                <span>{count} responses</span>
+                <span style="font-weight: bold;">Tamanho da Amostra:</span>
+                <span>{count} respostas</span>
             </div>
         </div>
         """
@@ -846,7 +935,7 @@ def show_satisfaction_levels_tab(df):
                             text-align: center;
                             padding: 5px;
                             z-index: 9999;">
-                    Housing Satisfaction in Portugal
+                    Satisfação Habitacional em Portugal
                 </div>
                 """
         m.get_root().html.add_child(folium.Element(title_html))
@@ -858,6 +947,7 @@ def show_satisfaction_levels_tab(df):
                 score = district_satisfaction_dict[district_name]
                 # Calculate color based on score (-2 to +2)
                 if score < -1.5:
+                    # Map satisfaction levels to the Portuguese equivalents but use English values for color mapping
                     color = SATISFACTION_COLORS["Very Dissatisfied"]
                 elif score < -0.5:
                     color = SATISFACTION_COLORS["Dissatisfied"]
@@ -896,7 +986,7 @@ def show_satisfaction_levels_tab(df):
             highlight_function=highlight_function,
             tooltip=folium.features.GeoJsonTooltip(
                 fields=["Distrito"],
-                aliases=["District:"],
+                aliases=["Distrito:"],
                 style="background-color: white; color: #333333; font-weight: bold; font-family: Arial; font-size: 12px; padding: 10px; border-radius: 3px; box-shadow: 3px 3px 10px rgba(0,0,0,0.2);",
             ),
         ).add_to(m)
@@ -939,7 +1029,7 @@ def show_satisfaction_levels_tab(df):
                     ),
                 ).add_to(m)
 
-        # Add a custom legend
+        # Add a custom legend with Portuguese satisfaction levels
         legend_html = """
             <div style="position: fixed; 
                         bottom: 10px; right: 10px; 
@@ -947,21 +1037,21 @@ def show_satisfaction_levels_tab(df):
                         background-color: rgba(255, 255, 255, 0.8);
                         z-index: 9999; font-size:12px;
                         padding: 5px; ">
-                <div style="text-align: center; margin-bottom: 5px; font-weight: bold;">Satisfaction Level</div>
+                <div style="text-align: center; margin-bottom: 5px; font-weight: bold;">Nível de Satisfação</div>
                 <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <div style="background-color: #1a9850; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Very High (1.5 to 2.0)
+                    <div style="background-color: #1a9850; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Muito Alto (1,5 a 2,0)
                 </div>
                 <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <div style="background-color: #91cf60; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>High (0.5 to 1.5)
+                    <div style="background-color: #91cf60; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Alto (0,5 a 1,5)
                 </div>
                 <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <div style="background-color: #fee08b; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Neutral (-0.5 to 0.5)
+                    <div style="background-color: #fee08b; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Neutro (-0,5 a 0,5)
                 </div>
                 <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <div style="background-color: #fc8d59; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Low (-1.5 to -0.5)
+                    <div style="background-color: #fc8d59; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Baixo (-1,5 a -0,5)
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="background-color: #d73027; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Very Low (-2.0 to -1.5)
+                    <div style="background-color: #d73027; width: 20px; height: 20px; margin-right: 5px; solid #ccc;"></div>Muito Baixo (-2,0 a -1,5)
                 </div>
             </div>
         """
@@ -974,8 +1064,8 @@ def show_satisfaction_levels_tab(df):
         # Add fullscreen button
         folium.plugins.Fullscreen(
             position="topleft",
-            title="Expand map",
-            title_cancel="Exit fullscreen",
+            title="Expandir mapa",
+            title_cancel="Sair do ecrã inteiro",
             force_separate_button=True,
         ).add_to(m)
 
@@ -983,7 +1073,7 @@ def show_satisfaction_levels_tab(df):
         folium.plugins.Search(
             layer=folium.GeoJson(portugal_geojson),
             geom_type="Polygon",
-            placeholder="Search for a district",
+            placeholder="Procurar um distrito",
             collapsed=True,
             search_label="Distrito",
         ).add_to(m)
@@ -993,18 +1083,18 @@ def show_satisfaction_levels_tab(df):
 
         # Add contextual information about the map
         st.markdown("""
-        **Map Analysis Insights:**
+        **Insights da Análise do Mapa:**
         
-        - **Regional Variations**: The map reveals significant disparities in housing satisfaction across different regions of Portugal.
-        - **Urban-Rural Divide**: Major urban centers like Lisboa and Porto show distinct satisfaction patterns compared to rural areas.
-        - **Coastal vs. Interior**: Coastal districts generally demonstrate different satisfaction profiles than interior regions.
-        - **Sample Size Consideration**: When interpreting this data, note that some districts may have smaller sample sizes, which could affect the reliability of their satisfaction scores.
+        - **Variações Regionais**: O mapa revela disparidades significativas na satisfação habitacional entre diferentes regiões de Portugal.
+        - **Divisão Urbano-Rural**: Os grandes centros urbanos como Lisboa e Porto apresentam padrões de satisfação distintos em comparação com as áreas rurais.
+        - **Litoral vs. Interior**: Os distritos costeiros geralmente demonstram perfis de satisfação diferentes dos das regiões interiores.
+        - **Consideração do Tamanho da Amostra**: Ao interpretar estes dados, note que alguns distritos podem ter tamanhos de amostra menores, o que poderia afetar a fiabilidade das suas pontuações de satisfação.
         
-        Click on any district marker to view detailed satisfaction statistics. The interactive nature of this map allows for exploration of geographic patterns in housing satisfaction across Portugal.
+        Clique em qualquer marcador de distrito para ver estatísticas detalhadas de satisfação. A natureza interativa deste mapa permite a exploração de padrões geográficos na satisfação habitacional em Portugal.
         """)
 
     except Exception as e:
-        st.error(f"Error loading or processing the map: {e}")
+        st.error(f"Erro ao carregar ou processar o mapa: {e}")
         st.info(
-            "Please ensure the GeoJSON file 'distrito_all_s.geojson' is available in the application directory."
+            "Por favor, certifique-se de que o ficheiro GeoJSON 'distrito_all_s.geojson' está disponível no diretório da aplicação."
         )
