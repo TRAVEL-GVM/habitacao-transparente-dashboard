@@ -40,7 +40,6 @@ def show_housing_types_sizes_tab(df):
     # Quick Facts section with attention-grabbing statistics
     # Calculate a few key statistics for the quick facts
     avg_area = df[df['area_numerical'].notna()]['area_numerical'].mean()
-    total_responses = len(df)
     apartment_pct = (df['house_type'] == 'Apartment').sum() / df['house_type'].count() * 100
     
     # Calculate household size
@@ -54,7 +53,6 @@ def show_housing_types_sizes_tab(df):
         else np.nan, 
         axis=1
     )
-    avg_space_per_person = df['approx_space_per_person'].mean()
     
     # Calculate satisfaction with size
     size_satisfaction = df.dropna(subset=['area_numerical', 'satisfaction_level']).copy()
@@ -63,7 +61,7 @@ def show_housing_types_sizes_tab(df):
     satisfied_with_size_pct = size_satisfaction['satisfied_with_size'].mean() * 100
     
     # Create 3 columns for quick facts
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.metric(
@@ -90,6 +88,105 @@ def show_housing_types_sizes_tab(df):
             label="Taxa de Satisfação com Tamanho",
             value=f"{satisfied_with_size_pct:.1f}%",
             help="Percentagem de agregados que reportam satisfação com o tamanho da sua habitação"
+        )
+
+    with col4:
+        # Create a total household size column
+        df['household_size_grouped'] = df['household_size'].apply(
+            lambda x: '6+' if pd.notna(x) and x >= 6 else (str(int(x)) if pd.notna(x) and x > 0 else np.nan)
+        )
+        
+        # Count household sizes
+        household_counts = df['household_size_grouped'].value_counts().reset_index()
+        household_counts.columns = ['Tamanho do Agregado', 'Contagem']
+        
+        # Filter for records with area data
+        household_area_data = df[df['area_numerical'].notna() & df['household_size_grouped'].notna()].copy()
+
+        # Order household sizes
+        size_order = ['1', '2', '3', '4', '5', '6+']
+        household_area_data['household_size_grouped'] = pd.Categorical(
+            household_area_data['household_size_grouped'],
+            categories=size_order,
+            ordered=True
+        )
+
+        # Calculate average area by household size
+        avg_area_by_household = household_area_data.groupby('household_size_grouped')['area_numerical'].mean().reset_index()
+        avg_area_by_household = avg_area_by_household.sort_values('household_size_grouped')
+
+        # Calculate statistics for insights
+        area_per_person = household_area_data.copy()
+        # Convert categorical to numeric for division operation and handle NaN values
+        area_per_person['household_size_numeric'] = area_per_person['household_size_grouped'].astype(str).apply(
+            lambda x: 6 if x == '6+' else (int(x) if x != 'nan' else np.nan)
+        )
+
+        # Only calculate area_per_person for rows with valid household size
+        area_per_person['area_per_person'] = area_per_person.apply(
+            lambda row: row['area_numerical'] / row['household_size_numeric'] 
+            if pd.notna(row['household_size_numeric']) and row['household_size_numeric'] > 0 else np.nan, 
+            axis=1
+        )
+
+        # Calculate percentage of households with less than 15m² per person
+        area_per_person_metrics = household_area_data.copy()
+        
+        # Convert categorical to numeric for division operation and handle NaN values
+        area_per_person_metrics['household_size_numeric'] = area_per_person_metrics['household_size_grouped'].astype(str).apply(
+            lambda x: 6 if x == '6+' else (int(x) if x != 'nan' else np.nan)
+        )
+        
+        # Only calculate area_per_person for rows with valid household size
+        area_per_person_metrics['area_per_person'] = area_per_person_metrics.apply(
+            lambda row: row['area_numerical'] / row['household_size_numeric'] 
+            if pd.notna(row['household_size_numeric']) and row['household_size_numeric'] > 0 else np.nan, 
+            axis=1
+        )
+         # Calculate average area per person by household size
+        avg_area_per_person = area_per_person.groupby('household_size_grouped')['area_per_person'].mean().reset_index()
+    
+        # Calculate components for the score
+        # 1. Adequate space per person (minimum 15m²)
+        area_adequacy = (area_per_person_metrics['area_per_person'] >= 15).mean() * 100
+        
+        # 2. Bedroom adequacy (rough estimate: at least n-1 bedrooms for n people, where n>1)
+        bedroom_adequacy_data = df.dropna(subset=['household_size', 'bedroom_count']).copy()
+        bedroom_adequacy_data['bedrooms_numeric'] = bedroom_adequacy_data['bedroom_count'].map({'0': 0, '1': 1, '2': 2, '3': 3, '4+': 4})
+        bedroom_adequacy_data['adequate_bedrooms'] = bedroom_adequacy_data.apply(
+            lambda row: True if pd.isna(row['household_size']) or pd.isna(row['bedrooms_numeric']) else (
+                True if row['household_size'] <= 1 else row['bedrooms_numeric'] >= row['household_size'] - 1
+            ),
+            axis=1
+        )
+        bedroom_adequacy = bedroom_adequacy_data['adequate_bedrooms'].mean() * 100
+        
+        # Calculate composite score (weighted average)
+        housing_adequacy_score = (area_adequacy * 0.5 + bedroom_adequacy * 0.5) / 100
+        
+        # Scale to 0-100
+        housing_adequacy_score = min(max(housing_adequacy_score * 100, 0), 100)
+        
+        # Determine color
+        if housing_adequacy_score >= 80:
+            delta_color = "normal"  # Green
+            interpretation = "Bom"
+        elif housing_adequacy_score >= 60:
+            delta_color = "normal"  # Green
+            interpretation = "Adequado"
+        else:
+            delta_color = "inverse"  # Red
+            interpretation = "Necessita Melhoria"
+        
+        st.metric(
+            label="Índice de Adequação Habitacional",
+            value=f"{housing_adequacy_score:.1f}/100",
+            delta=interpretation,
+            delta_color=delta_color,
+            help="""
+            Índice composto que mede a adequação habitacional geral baseado em espaço por pessoa, número de quartos e correspondência estimada de preferências.
+            "Com base na fórmula: *50% espaço adequado (>15m²) + 50% quartos adequados* (n-1 quartos por n pessoas)*
+            """
         )
     
     # Housing mismatch insights
@@ -227,15 +324,6 @@ def show_housing_types_sizes_tab(df):
     col1, col2 = st.columns(2)
     
     with col1:
-        # Create a total household size column
-        df['household_size_grouped'] = df['household_size'].apply(
-            lambda x: '6+' if pd.notna(x) and x >= 6 else (str(int(x)) if pd.notna(x) and x > 0 else np.nan)
-        )
-        
-        # Count household sizes
-        household_counts = df['household_size_grouped'].value_counts().reset_index()
-        household_counts.columns = ['Tamanho do Agregado', 'Contagem']
-        
         # Order household sizes
         size_order = ['1', '2', '3', '4', '5', '6+']
         household_counts['Tamanho do Agregado'] = pd.Categorical(
@@ -307,8 +395,8 @@ def show_housing_types_sizes_tab(df):
     st.markdown(f"""
     **Insights-Chave sobre Agregados Familiares Portugueses:**
     
-    - **Tamanho do Agregado:** Agregados pequenos (1-2 pessoas) compõem {small_households_pct:.1f}% de todos os agregados, enquanto agregados maiores (4+ pessoas) representam {large_households_pct:.1f}%.
-    - **Composição Familiar:** {with_children_pct:.1f}% dos agregados incluem crianças, enquanto {without_children_pct:.1f}% não têm membros dependentes.
+    - **Tamanho do Agregado:** Agregados pequenos (1-2 pessoas) compõem **{small_households_pct:.1f}%** de todos os agregados, enquanto agregados maiores (4+ pessoas) representam {large_households_pct:.1f}%.
+    - **Composição Familiar:** **{with_children_pct:.1f}%** dos agregados incluem crianças, enquanto **{without_children_pct:.1f}%** não têm membros dependentes.
     - **Necessidades Habitacionais:** Esta distribuição sugere uma necessidade de opções habitacionais diversas, com particular ênfase em unidades mais pequenas que ainda proporcionem espaço adequado para diferentes atividades do agregado.
     - **Demografia em Mudança:** O tamanho médio do agregado em Portugal tem diminuído ao longo do tempo, refletindo tendências de formação tardia de família e envelhecimento da população.
     """)
@@ -464,11 +552,11 @@ def show_housing_types_sizes_tab(df):
     st.markdown(f"""
     **Insights-Chave sobre o Stock Habitacional Disponível:**
     
-    - **Tipos de Habitação:** {apartment_pct:.1f}% das habitações são apartamentos, enquanto {house_pct:.1f}% são moradias. Isto reflete a concentração urbana de Portugal e os padrões tradicionais de desenvolvimento.
+    - **Tipos de Habitação:** **{apartment_pct:.1f}%** das habitações são apartamentos, enquanto **{house_pct:.1f}%** são moradias. Isto reflete a concentração urbana de Portugal e os padrões tradicionais de desenvolvimento.
     
-    - **Distribuição de Tipologias:** As tipologias {most_common_bedroom} são as mais comuns ({most_common_pct:.1f}% das habitações), com unidades pequenas (T0-T1) representando {small_units_pct:.1f}% e unidades maiores (T3+) representando {large_units_pct:.1f}% do parque habitacional.
+    - **Distribuição de Tipologias:** As tipologias **{most_common_bedroom}** são as mais comuns (**{most_common_pct:.1f}%** das habitações), com unidades pequenas (T0-T1) representando **{small_units_pct:.1f}%** e unidades maiores (T3+) representando **{large_units_pct:.1f}%** do parque habitacional.
     
-    - **Distribuição de Tamanhos:** O intervalo de tamanho habitacional mais comum é {most_common_area} m² ({most_common_area_pct:.1f}% das unidades). Casas pequenas (≤100 m²) compõem {small_area_pct:.1f}% do parque habitacional, casas médias (101-200 m²) representam {medium_area_pct:.1f}%, e casas maiores (>200 m²) representam {large_area_pct:.1f}%.
+    - **Distribuição de Tamanhos:** O intervalo de tamanho habitacional mais comum é **{most_common_area}** m² (**{most_common_area_pct:.1f}%** das unidades). Casas pequenas (≤100 m²) compõem **{small_area_pct:.1f}%** do parque habitacional, casas médias (101-200 m²) representam **{medium_area_pct:.1f}%**, e casas maiores (>200 m²) representam **{large_area_pct:.1f}%**.
     
     - **Padrões Urbanos vs. Rurais:** Os padrões habitacionais mostram claras divisões urbano-rurais, com apartamentos a dominar nas cidades e moradias a prevalecer nas áreas rurais.
     """)
@@ -480,7 +568,6 @@ def show_housing_types_sizes_tab(df):
     Agora podemos analisar quão bem o parque habitacional português satisfaz as necessidades das famílias, examinando a relação entre 
     tipos de habitação, número de quartos e tamanhos de agregados.
     """)
-
     
     # Calculate the cross-tabulation of housing type and bedroom count
     housing_bedroom_data = pd.crosstab(
@@ -547,39 +634,6 @@ def show_housing_types_sizes_tab(df):
     # Housing adequacy metrics section
     st.subheader("Avaliação de Adequação Habitacional")
     
-    # Calculate housing adequacy metrics
-    # Filter for records with area data
-    household_area_data = df[df['area_numerical'].notna() & df['household_size_grouped'].notna()].copy()
-    
-    # Order household sizes
-    size_order = ['1', '2', '3', '4', '5', '6+']
-    household_area_data['household_size_grouped'] = pd.Categorical(
-        household_area_data['household_size_grouped'],
-        categories=size_order,
-        ordered=True
-    )
-    
-    # Calculate average area by household size
-    avg_area_by_household = household_area_data.groupby('household_size_grouped')['area_numerical'].mean().reset_index()
-    avg_area_by_household = avg_area_by_household.sort_values('household_size_grouped')
-    
-    # Calculate statistics for insights
-    area_per_person = household_area_data.copy()
-    # Convert categorical to numeric for division operation and handle NaN values
-    area_per_person['household_size_numeric'] = area_per_person['household_size_grouped'].astype(str).apply(
-        lambda x: 6 if x == '6+' else (int(x) if x != 'nan' else np.nan)
-    )
-    
-    # Only calculate area_per_person for rows with valid household size
-    area_per_person['area_per_person'] = area_per_person.apply(
-        lambda row: row['area_numerical'] / row['household_size_numeric'] 
-        if pd.notna(row['household_size_numeric']) and row['household_size_numeric'] > 0 else np.nan, 
-        axis=1
-    )
-    
-    # Calculate average area per person by household size
-    avg_area_per_person = area_per_person.groupby('household_size_grouped')['area_per_person'].mean().reset_index()
-    
     # Create columns for the visualization
     col1, col2 = st.columns(2)
     
@@ -630,78 +684,11 @@ def show_housing_types_sizes_tab(df):
         )
         st.plotly_chart(fig_area_per_person, use_container_width=True)
     
-    # Housing Adequacy Metrics
-    col1, col2, col3 = st.columns(3)
+    # Calculate overcrowding
+    overcrowded_pct = (area_per_person_metrics['area_per_person'] < 15).sum() / area_per_person_metrics['area_per_person'].count() * 100
     
-    with col1:
-        # Calculate percentage of households with less than 15m² per person
-        area_per_person_metrics = household_area_data.copy()
-        
-        # Convert categorical to numeric for division operation and handle NaN values
-        area_per_person_metrics['household_size_numeric'] = area_per_person_metrics['household_size_grouped'].astype(str).apply(
-            lambda x: 6 if x == '6+' else (int(x) if x != 'nan' else np.nan)
-        )
-        
-        # Only calculate area_per_person for rows with valid household size
-        area_per_person_metrics['area_per_person'] = area_per_person_metrics.apply(
-            lambda row: row['area_numerical'] / row['household_size_numeric'] 
-            if pd.notna(row['household_size_numeric']) and row['household_size_numeric'] > 0 else np.nan, 
-            axis=1
-        )
-        
-        # Calculate overcrowding
-        overcrowded_pct = (area_per_person_metrics['area_per_person'] < 15).sum() / area_per_person_metrics['area_per_person'].count() * 100
-        
-        st.metric(
-            label="Taxa de Sobrelotação",
-            value=f"{overcrowded_pct:.1f}%",
-            help="Percentagem de agregados com menos de 15m² por pessoa, um limiar comum para espaço habitacional adequado"
-        )
-    
-    with col2:
-        # Create a "Housing Adequacy Score"
-        # This is simplified approximation based on available data
-        
-        # Calculate components for the score
-        # 1. Adequate space per person (minimum 15m²)
-        area_adequacy = (area_per_person_metrics['area_per_person'] >= 15).mean() * 100
-        
-        # 2. Bedroom adequacy (rough estimate: at least n-1 bedrooms for n people, where n>1)
-        bedroom_adequacy_data = df.dropna(subset=['household_size', 'bedroom_count']).copy()
-        bedroom_adequacy_data['bedrooms_numeric'] = bedroom_adequacy_data['bedroom_count'].map({'0': 0, '1': 1, '2': 2, '3': 3, '4+': 4})
-        bedroom_adequacy_data['adequate_bedrooms'] = bedroom_adequacy_data.apply(
-            lambda row: True if pd.isna(row['household_size']) or pd.isna(row['bedrooms_numeric']) else (
-                True if row['household_size'] <= 1 else row['bedrooms_numeric'] >= row['household_size'] - 1
-            ),
-            axis=1
-        )
-        bedroom_adequacy = bedroom_adequacy_data['adequate_bedrooms'].mean() * 100
-        
-        # 3. Housing type preference match (simplified - assume preference is met)
-        # This is a placeholder as we don't have direct preference data
-        preference_match = 80  # Assume 80% match as a reasonable estimate
-        
-        # Calculate composite score (weighted average)
-        housing_adequacy_score = (area_adequacy * 0.4 + bedroom_adequacy * 0.4 + preference_match * 0.2) / 100
-        
-        # Scale to 0-100
-        housing_adequacy_score = min(max(housing_adequacy_score * 100, 0), 100)
-        
-        # Determine color
-        if housing_adequacy_score >= 80:
-            delta_color = "normal"  # Green
-            interpretation = "Bom"
-        elif housing_adequacy_score >= 60:
-            delta_color = "normal"  # Green
-            interpretation = "Adequado"
-        else:
-            delta_color = "inverse"  # Red
-            interpretation = "Necessita Melhoria"
-        
-        st.metric(
-            label="Índice de Adequação Habitacional",
-            value=f"{housing_adequacy_score:.1f}/100",
-            delta=interpretation,
-            delta_color=delta_color,
-            help="Índice composto que mede a adequação habitacional geral baseado em espaço por pessoa, número de quartos e correspondência estimada de preferências"
-        )
+    st.metric(
+        label="Taxa de Sobrelotação",
+        value=f"{overcrowded_pct:.1f}%",
+        help="Percentagem de agregados com menos de 15m² por pessoa, um limiar comum para espaço habitacional adequado"
+    )
