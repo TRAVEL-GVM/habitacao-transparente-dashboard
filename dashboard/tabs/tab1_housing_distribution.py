@@ -22,12 +22,12 @@ def show_housing_distribution_tab(df):
 
     # Introdução com estilo melhorado
     st.markdown("""
-    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32;">
+    <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; margin-bottom: 10px;">
     <h4 style="color: #2e7d32; margin-top: 0;">Visão Geral</h4>
     <p>Esta secção analisa como os residentes portugueses estão distribuídos em diferentes situações habitacionais,
     revelando padrões complexos de posse, arrendamento e arranjos de vida compartilhada.</p>
     <ul>
-      <li><strong>Situações Habitacionais:</strong> Arrendamento, Propriedade e Vivendo com Outros</li>
+      <li><strong>Situações Habitacionais:</strong> Arrendamento, Casa Própria ou Outro</li>
       <li><strong>Tendências Principais:</strong> Variações significativas nas situações habitacionais entre diferentes grupos etários</li>
       <li><strong>Análise Detalhada:</strong> Distribuição e fatores que influenciam as escolhas habitacionais em Portugal</li>
     </ul>
@@ -70,12 +70,11 @@ def show_housing_distribution_tab(df):
         ]
         st.markdown(f"""
         **Principais Conclusões:**
-        - {dominant_situation} é a situação habitacional mais comum em Portugal
-        - {housing_counts.iloc[housing_counts["Count"].argmax()]["Percentage"]} dos inquiridos encontram-se em {dominant_situation.lower() if dominant_situation != "Living with others" else "vivem com outros"}
+        - **{dominant_situation}** é a situação habitacional mais comum em Portugal
+        - **{housing_counts.iloc[housing_counts["Count"].argmax()]["Percentage"]}** dos inquiridos encontram-se em {dominant_situation.lower() if dominant_situation != "Others" else "vivem com outros"}
         """)
 
     with col2:
-        st.subheader("Situação Habitacional por Faixa Etária")
         # Extract birth year range for age groups and improve labeling
         df["birth_period"] = df["ano_nascimento_interval"].str.extract(r"\[(\d+)")
         df["birth_period"] = pd.to_numeric(df["birth_period"], errors="coerce")
@@ -155,13 +154,13 @@ def show_housing_distribution_tab(df):
 
     # Adiciona mapeamento entre os rótulos em português e os valores dos dados
     map_housing = {
-        "Arrendamento": "Renting",
-        "Casa Própria": "Owned",
-        "Vivendo com outros": "Living with others"
+        "Arrendamento": "Arrendamento",
+        "Casa Própria": "Casa Própria",
+        "Others": "Others"
     }
     selected_situation = st.selectbox(
         "Selecione a Situação Habitacional a Explorar",
-        options=list(map_housing.keys()) + ["Todas"]
+        options=list(map_housing.values()) + ["Todas"]
     )
 
     if selected_situation != "Todas":
@@ -237,6 +236,7 @@ def show_housing_distribution_tab(df):
             color="Education Level",
             color_discrete_sequence=PRIMARY_COLORS,  # Use primary color palette
             title=f"Distribuição do Nível de Educação para {selected_situation}",
+            labels={"Education Level": "Nível de Educação", "Count": "Contagem"}
         )
         fig.update_layout(
             plot_bgcolor=BACKGROUND_COLORS[0],
@@ -363,6 +363,7 @@ def show_housing_distribution_tab(df):
             color="Estratégia",
             color_discrete_sequence=PRIMARY_COLORS,
             title="Estratégias Utilizadas para Encontrar Arrendamento",
+            labels={"Estratégia": "Estratégia de Arrendamento", "Contagem": "Número de Pessoas"}
         )
         fig.update_layout(
             xaxis_title="Estratégia de Arrendamento",
@@ -450,6 +451,7 @@ def show_housing_distribution_tab(df):
             color="Estratégia",
             color_discrete_sequence=PRIMARY_COLORS,
             title="Estratégias Utilizadas para Compra de Habitação",
+            labels={"Estratégia": "Estratégia de Compra", "Contagem": "Número de Pessoas"}
         )
         fig.update_layout(
             xaxis_title="Estratégia de Compra",

@@ -24,10 +24,10 @@ def show_visao_geral_tab(df):
 
     # Calculate key metrics
     total_responses = len(df)
-    ownership_pct = (df["housing_situation"] == "Owned").mean() * 100
-    renting_pct = (df["housing_situation"] == "Renting").mean() * 100
+    ownership_pct = (df["housing_situation"] == "Casa Própria").mean() * 100
+    Arrendamento_pct = (df["housing_situation"] == "Arrendamento").mean() * 100
     living_with_others_pct = (
-        df["housing_situation"] == "Living with others"
+        df["housing_situation"] == "Others"
     ).mean() * 100
 
     # Calculate satisfaction score (1-5 scale)
@@ -142,7 +142,7 @@ def show_visao_geral_tab(df):
             f"""
         <div class="metric-card">
             <div class="metric-label">Arrendamento</div>
-            <div class="metric-value">{renting_pct:.1f}%</div>
+            <div class="metric-value">{Arrendamento_pct:.1f}%</div>
             <div class="metric-icon">🏢</div>
         </div>
         """,
@@ -316,19 +316,19 @@ def show_visao_geral_tab(df):
 
                     # Calculate rent average, handling potential NaN values
                     avg_rent = district_data[
-                        (district_data["housing_situation"] == "Renting")
+                        (district_data["housing_situation"] == "Arrendamento")
                         & (district_data["valor-mensal-renda"].notna())
                     ]["valor-mensal-renda"].mean()
 
                     # Calculate purchase average, handling potential NaN values
                     avg_purchase = district_data[
-                        (district_data["housing_situation"] == "Owned")
+                        (district_data["housing_situation"] == "Casa Própria")
                         & (district_data["valor-compra"].notna())
                     ]["valor-compra"].mean()
 
                     # Calculate percentage of high rent burden, handling edge cases
                     rent_data = district_data[
-                        district_data["housing_situation"] == "Renting"
+                        district_data["housing_situation"] == "Arrendamento"
                     ]
                     high_burden_pct = 0
                     if len(rent_data) > 0:
@@ -594,14 +594,14 @@ def show_visao_geral_tab(df):
             filtered_df["satisfaction_score"].mean() if not filtered_df.empty else 0
         )
         avg_rent = (
-            filtered_df[filtered_df["housing_situation"] == "Renting"][
+            filtered_df[filtered_df["housing_situation"] == "Arrendamento"][
                 "valor-mensal-renda"
             ].mean()
             if not filtered_df.empty
             else 0
         )
         avg_purchase = (
-            filtered_df[filtered_df["housing_situation"] == "Owned"][
+            filtered_df[filtered_df["housing_situation"] == "Casa Própria"][
                 "valor-compra"
             ].mean()
             if not filtered_df.empty
@@ -610,7 +610,7 @@ def show_visao_geral_tab(df):
 
         # Rent burden percentage
         rent_burden_data = (
-            filtered_df[filtered_df["housing_situation"] == "Renting"]
+            filtered_df[filtered_df["housing_situation"] == "Arrendamento"]
             if not filtered_df.empty
             else pd.DataFrame()
         )

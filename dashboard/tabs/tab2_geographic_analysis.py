@@ -36,10 +36,10 @@ def show_geographic_analysis_tab(df):
         total_districts = df['distrito'].nunique()
         st.metric("Total de Distritos", total_districts)
     with col2:
-        most_expensive_district = df[df['housing_situation'] == 'Renting'].groupby('distrito')['valor-mensal-renda'].mean().idxmax()
+        most_expensive_district = df[df['housing_situation'] == 'Arrendamento'].groupby('distrito')['valor-mensal-renda'].mean().idxmax()
         st.metric("Distrito Mais Caro (Arrendamento)", most_expensive_district.capitalize())
     with col3:
-        highest_ownership = df.groupby('distrito')['housing_situation'].apply(lambda x: (x == 'Owned').mean() * 100).idxmax()
+        highest_ownership = df.groupby('distrito')['housing_situation'].apply(lambda x: (x == 'Casa Própria').mean() * 100).idxmax()
         st.metric("Taxa Mais Alta de Propriedade", highest_ownership.capitalize())
     
     # Create map placeholders
@@ -160,7 +160,7 @@ def show_geographic_analysis_tab(df):
     
     with col1:
         # Rent costs by district
-        rent_data = region_df[region_df['housing_situation'] == 'Renting']
+        rent_data = region_df[region_df['housing_situation'] == 'Arrendamento']
         if not rent_data.empty and 'valor-mensal-renda' in rent_data.columns:
             # Calculate average rent
             avg_rent = rent_data['valor-mensal-renda'].mean().round(2)
@@ -197,7 +197,7 @@ def show_geographic_analysis_tab(df):
     
     with col2:
         # Purchase costs by district
-        purchase_data = region_df[region_df['housing_situation'] == 'Owned']
+        purchase_data = region_df[region_df['housing_situation'] == 'Casa Própria']
         if not purchase_data.empty and 'valor-compra' in purchase_data.columns:
             # Calculate average purchase price
             avg_purchase = purchase_data['valor-compra'].mean().round(2)
@@ -239,7 +239,7 @@ def show_geographic_analysis_tab(df):
     
     with col1:
         # Rent burden by district
-        rent_burden_data = df[df['housing_situation'] == 'Renting'].dropna(subset=['rent_burden', 'distrito'])
+        rent_burden_data = df[df['housing_situation'] == 'Arrendamento'].dropna(subset=['rent_burden', 'distrito'])
         rent_burden_data['distrito'] = rent_burden_data['distrito'].str.capitalize()
         if not rent_burden_data.empty:
             burden_counts = rent_burden_data.groupby(['distrito', 'rent_burden']).size().reset_index(name='count')
@@ -280,7 +280,7 @@ def show_geographic_analysis_tab(df):
     with col2:
         # Property age by district
         if 'ano-compra' in df.columns:
-            purchase_year_data = df[df['housing_situation'] == 'Owned'].dropna(subset=['ano-compra', 'distrito'])
+            purchase_year_data = df[df['housing_situation'] == 'Casa Própria'].dropna(subset=['ano-compra', 'distrito'])
             purchase_year_data['distrito'] = purchase_year_data['distrito'].str.capitalize()
             if not purchase_year_data.empty:
                 # Calculate property age

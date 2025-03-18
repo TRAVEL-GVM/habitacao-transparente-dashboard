@@ -41,9 +41,9 @@ def show_exploratory_analysis_tab(df):
         if "housing_situation" in df.columns:
             # Criar mapeamento de valores em inglês para português
             housing_mapping = {
-                "Owned": "Casa Própria",
-                "Renting": "Arrendamento",
-                "Living with others": "A viver com outros",
+                "Casa Própria": "Casa Própria",
+                "Arrendamento": "Arrendamento",
+                "Others": "A viver com outros",
                 "All": "Todos"
             }
             

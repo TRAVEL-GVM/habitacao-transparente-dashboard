@@ -106,7 +106,7 @@ def show_housing_types_sizes_tab(df):
     """)
     
     # SECTION 4: IMPACT ON SATISFACTION
-    st.subheader("4. Impacto na Satisfação: Como o Tamanho da Habitação Afeta a Qualidade de Vida")
+    st.subheader("Impacto na Satisfação: Como o Tamanho da Habitação Afeta a Qualidade de Vida")
     
     st.markdown("""
     O desajuste entre necessidades habitacionais e disponibilidade tem impacto direto na satisfação dos residentes.
@@ -216,7 +216,7 @@ def show_housing_types_sizes_tab(df):
     )
 
     # SECTION 1: WHO NEEDS HOUSING? (HOUSEHOLD COMPOSITION)
-    st.subheader("1. Quem Precisa de Habitação? Compreender os Agregados Portugueses")
+    st.subheader("Quem Precisa de Habitação? Compreender os Agregados Portugueses")
     
     st.markdown("""
     Para avaliar se a habitação satisfaz as necessidades dos residentes, primeiro precisamos compreender a composição dos agregados familiares. 
@@ -314,7 +314,7 @@ def show_housing_types_sizes_tab(df):
     """)
     
     # SECTION 2: WHAT HOUSING IS AVAILABLE? (HOUSING STOCK)
-    st.subheader("2. Stock Habitacional Disponível: Tipos, Tamanhos e Configurações")
+    st.subheader("Stock Habitacional Disponível: Tipos, Tamanhos e Configurações")
     
     st.markdown("""
     Agora que compreendemos quem precisa de habitação, vamos examinar o stock habitacional disponível - o lado da oferta da equação.
@@ -474,81 +474,75 @@ def show_housing_types_sizes_tab(df):
     """)
     
     # SECTION 3: MATCHING NEEDS TO REALITY
-    st.subheader("3. Desajuste Habitacional: A Oferta Satisfaz a Procura?")
+    st.subheader("Desajuste Habitacional: A Oferta Satisfaz a Procura?")
     
     st.markdown("""
     Agora podemos analisar quão bem o parque habitacional português satisfaz as necessidades das famílias, examinando a relação entre 
     tipos de habitação, número de quartos e tamanhos de agregados.
     """)
+
     
-    # Compare bedroom count with housing type
-    col1, col2 = st.columns([3, 2])
+    # Calculate the cross-tabulation of housing type and bedroom count
+    housing_bedroom_data = pd.crosstab(
+        df['house_type'], 
+        df['bedroom_count'],
+        margins=False
+    ).reset_index()
     
-    with col1:
-        # Calculate the cross-tabulation of housing type and bedroom count
-        housing_bedroom_data = pd.crosstab(
-            df['house_type'], 
-            df['bedroom_count'],
-            margins=False
-        ).reset_index()
-        
-        # Filter out rows with NaN values
-        housing_bedroom_data = housing_bedroom_data.dropna()
-        
-        # Translate house types
-        housing_bedroom_data['house_type'] = housing_bedroom_data['house_type'].map({
-            'Apartment': 'Apartamento',
-            'House': 'Moradia'
-        })
-        
-        # Melt the dataframe for easier plotting
-        housing_bedroom_melted = pd.melt(
-            housing_bedroom_data,
-            id_vars=['house_type'],
-            var_name='bedroom_count',
-            value_name='count'
-        )
-        
-        # Translate bedroom_count to Portuguese typology
-        bedroom_mapping = {'0': 'T0', '1': 'T1', '2': 'T2', '3': 'T3', '4+': 'T4+'}
-        housing_bedroom_melted['bedroom_count'] = housing_bedroom_melted['bedroom_count'].map(bedroom_mapping)
-        
-        # Create the grouped bar chart
-        fig_housing_bedroom = px.bar(
-            housing_bedroom_melted,
-            x='house_type',
-            y='count',
-            color='bedroom_count',
-            title="Tipos de Habitação por Tipologia",
-            barmode='group',
-            labels={'house_type': 'Tipo de Habitação', 'count': 'Contagem', 'bedroom_count': 'Tipologia'},
-            color_discrete_sequence=ACCENT_COLORS
-        )
-        fig_housing_bedroom.update_layout(
-            plot_bgcolor=BACKGROUND_COLORS[0],
-            paper_bgcolor=BACKGROUND_COLORS[3],
-            font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0]
-        )
-        st.plotly_chart(fig_housing_bedroom, use_container_width=True)
+    # Filter out rows with NaN values
+    housing_bedroom_data = housing_bedroom_data.dropna()
     
-    with col2:
-        # Calculate most common configurations
-        most_common_apt = housing_bedroom_melted[housing_bedroom_melted['house_type'] == 'Apartamento'].loc[housing_bedroom_melted[housing_bedroom_melted['house_type'] == 'Apartamento']['count'].idxmax()]
-        most_common_house = housing_bedroom_melted[housing_bedroom_melted['house_type'] == 'Moradia'].loc[housing_bedroom_melted[housing_bedroom_melted['house_type'] == 'Moradia']['count'].idxmax()]
-        
-        # Create a match/mismatch analysis
-        st.markdown(f"""
-        **Análise de Configuração:**
-        
-        - Apartamento mais comum: **{most_common_apt['bedroom_count']}**
-        - Moradia mais comum: **{most_common_house['bedroom_count']}**
-        - Apartamentos concentram-se nas gamas T1-T2
-        - Moradias tipicamente oferecem T3+
-        - T0s são quase exclusivamente apartamentos
-        
-        Esta distribuição mostra como diferentes tipos de habitação servem diferentes tamanhos de agregado e necessidades.
-        """)
+    # Translate house types
+    housing_bedroom_data['house_type'] = housing_bedroom_data['house_type'].map({
+        'Apartment': 'Apartamento',
+        'House': 'Moradia'
+    })
+    
+    # Melt the dataframe for easier plotting
+    housing_bedroom_melted = pd.melt(
+        housing_bedroom_data,
+        id_vars=['house_type'],
+        var_name='bedroom_count',
+        value_name='count'
+    )
+    
+    # Translate bedroom_count to Portuguese typology
+    bedroom_mapping = {'0': 'T0', '1': 'T1', '2': 'T2', '3': 'T3', '4+': 'T4+'}
+    housing_bedroom_melted['bedroom_count'] = housing_bedroom_melted['bedroom_count'].map(bedroom_mapping)
+    
+    # Create the grouped bar chart
+    fig_housing_bedroom = px.bar(
+        housing_bedroom_melted,
+        x='house_type',
+        y='count',
+        color='bedroom_count',
+        title="Tipos de Habitação por Tipologia",
+        barmode='group',
+        labels={'house_type': 'Tipo de Habitação', 'count': 'Contagem', 'bedroom_count': 'Tipologia'},
+        color_discrete_sequence=ACCENT_COLORS
+    )
+    fig_housing_bedroom.update_layout(
+        plot_bgcolor=BACKGROUND_COLORS[0],
+        paper_bgcolor=BACKGROUND_COLORS[3],
+        font_color=TEXT_COLORS[2],
+        title_font_color=TEXT_COLORS[0]
+    )
+    st.plotly_chart(fig_housing_bedroom, use_container_width=True)
+    
+    
+    # Calculate most common configurations
+    most_common_apt = housing_bedroom_melted[housing_bedroom_melted['house_type'] == 'Apartamento'].loc[housing_bedroom_melted[housing_bedroom_melted['house_type'] == 'Apartamento']['count'].idxmax()]
+    most_common_house = housing_bedroom_melted[housing_bedroom_melted['house_type'] == 'Moradia'].loc[housing_bedroom_melted[housing_bedroom_melted['house_type'] == 'Moradia']['count'].idxmax()]
+    
+    # Create a match/mismatch analysis
+    st.markdown(f"""
+    **Análise de Configuração:**
+    
+    - Apartamento mais comum: **{most_common_apt['bedroom_count']}**
+    - Moradia mais comum: **{most_common_house['bedroom_count']}**
+    
+    Esta distribuição mostra como diferentes tipos de habitação servem diferentes tamanhos de agregado e necessidades.
+    """)
     
     # Housing adequacy metrics section
     st.subheader("Avaliação de Adequação Habitacional")

@@ -99,9 +99,9 @@ def load_data(file_path):
     
     # Create a clean housing situation column
     df['housing_situation'] = df['situacao-habitacional_primary'].map({
-        'arrendo': 'Renting',
-        'comprei': 'Owned',
-        'outrem': 'Living with others'
+        'arrendo': 'Arrendamento',
+        'comprei': 'Casa Própria',
+        'outrem': 'Others'
     })
     
     # Clean satisfaction levels
@@ -147,7 +147,15 @@ def load_data(file_path):
         else:
             return ">80% (Very High)"
     
-    df['rent_burden'] = df['percentagem-renda-paga'].apply(categorize_rent_percentage)
+    # Calculate rent burden percentage
+    df['rent_burden'] = df.apply(
+        lambda row: (row['valor-mensal-renda'] / (row['rendimento_numerical'] / 12)) * 100 
+        if pd.notna(row['valor-mensal-renda']) and pd.notna(row['rendimento_numerical']) and row['rendimento_numerical'] > 0 
+        else np.nan, 
+        axis=1
+    )
+
+    df['rent_burden'] = df['rent_burden'].apply(categorize_rent_percentage)
     
     # Create house type and typology columns
     df['house_type'] = df['tipo-casa_primary'].map({
@@ -196,6 +204,8 @@ def load_data(file_path):
         'profissional': 'Vocational',
         'basico': 'Basic'
     })
+
+    df['distrito'] = df['distrito'].str.capitalize()
     
     return df
 

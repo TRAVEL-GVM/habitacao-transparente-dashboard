@@ -54,7 +54,7 @@ def show_income_housing_costs_tab(df):
     )
 
     # Calcular algumas estatísticas para as métricas rápidas
-    rent_data = df[df["housing_situation"] == "Renting"]
+    rent_data = df[df["housing_situation"] == "Arrendamento"]
 
     # Calcular percentagem de inquiridos com sobrecarga alta
     high_burden_count = rent_data[
@@ -68,7 +68,7 @@ def show_income_housing_costs_tab(df):
     avg_rent = rent_data["valor-mensal-renda"].mean() if not rent_data.empty else 0
 
     # Calcular valor médio de compra
-    owned_data = df[df["housing_situation"] == "Owned"]
+    owned_data = df[df["housing_situation"] == "Casa Própria"]
     avg_purchase = owned_data["valor-compra"].mean() if not owned_data.empty else 0
 
     # Criar 3 colunas para métricas rápidas
@@ -217,128 +217,41 @@ def show_income_housing_costs_tab(df):
     analisando como os custos habitacionais variam em relação ao rendimento.
     """)
 
-    # Distribuição de rendimento por situação habitacional
-    col1, col2 = st.columns([1, 1])
+    # Traduzir situações habitacionais
+    housing_mapping = {
+        "Arrendamento": "Arrendamento",
+        "Casa Própria": "Casa Própria",
+        "Others": "Outro",
+    }
 
-    with col1:
-        # Traduzir situações habitacionais
-        housing_mapping = {
-            "Renting": "Arrendamento",
-            "Owned": "Propriedade",
-            "Living with others": "A viver com outros",
-        }
+    # Aplicar mapeamento
+    df_pt = df.copy()
+    df_pt["situacao_habitacional"] = df_pt["housing_situation"].map(housing_mapping)
 
-        # Aplicar mapeamento
-        df_pt = df.copy()
-        df_pt["situacao_habitacional"] = df_pt["housing_situation"].map(housing_mapping)
-
-        # Gráfico de caixa de rendimento por situação habitacional
-        fig = px.box(
-            df_pt,
-            x="situacao_habitacional",
-            y="rendimento_numerical",
-            color="situacao_habitacional",
-            color_discrete_map={
-                "Arrendamento": HOUSING_COLORS["Renting"],
-                "Propriedade": HOUSING_COLORS["Owned"],
-                "A viver com outros": HOUSING_COLORS["Living with others"],
-            },
-            title="Distribuição de Rendimento por Situação Habitacional",
-            labels={
-                "situacao_habitacional": "Situação Habitacional",
-                "rendimento_numerical": "Rendimento Anual (€)",
-            },
-        )
-        fig.update_layout(
-            plot_bgcolor=BACKGROUND_COLORS[0],
-            paper_bgcolor=BACKGROUND_COLORS[3],
-            font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0],
-        )
-        st.plotly_chart(fig)
-
-    with col2:
-        # Calcular rácio custo habitacional para rendimento
-        housing_cost_data = df.copy()
-
-        # Calcular custos habitacionais mensais
-        housing_cost_data["monthly_housing_cost"] = np.nan
-
-        # Para arrendatários, usar renda mensal
-        renters_mask = housing_cost_data["housing_situation"] == "Renting"
-        housing_cost_data.loc[renters_mask, "monthly_housing_cost"] = (
-            housing_cost_data.loc[renters_mask, "valor-mensal-renda"]
-        )
-
-        # Para proprietários, estimar pagamento mensal da hipoteca
-        # Assumir hipoteca de 25 anos a 3% de taxa de juro (cálculo simplificado)
-        owners_mask = housing_cost_data["housing_situation"] == "Owned"
-        # Pagamento mensal = P * r * (1+r)^n / ((1+r)^n - 1)
-        # Onde P = principal, r = taxa mensal, n = número de pagamentos
-        r = 0.03 / 12  # Taxa de juro mensal
-        n = 25 * 12  # Número de pagamentos (25 anos)
-
-        # Calcular fator da hipoteca
-        mortgage_factor = r * (1 + r) ** n / ((1 + r) ** n - 1)
-
-        housing_cost_data.loc[owners_mask, "monthly_housing_cost"] = (
-            housing_cost_data.loc[owners_mask, "valor-compra"] * mortgage_factor
-        )
-
-        # Calcular rácio custo habitacional para rendimento
-        housing_cost_data["monthly_income"] = (
-            housing_cost_data["rendimento_numerical"] / 12
-        )
-        housing_cost_data["housing_cost_ratio"] = (
-            housing_cost_data["monthly_housing_cost"]
-            / housing_cost_data["monthly_income"]
-            * 100
-        )
-
-        # Criar categorias para rácio custo habitacional
-        housing_cost_data["cost_income_category"] = pd.cut(
-            housing_cost_data["housing_cost_ratio"],
-            bins=[0, 30, 50, 80, float("inf")],
-            labels=["≤30%", "31-50%", "51-80%", ">80%"],
-        )
-
-        # Traduzir situações habitacionais
-        housing_cost_data["situacao_habitacional"] = housing_cost_data[
-            "housing_situation"
-        ].map(housing_mapping)
-
-        # Gráfico de barras de rácio custo habitacional para rendimento por situação
-        cost_ratio_pivot = pd.crosstab(
-            housing_cost_data["situacao_habitacional"],
-            housing_cost_data["cost_income_category"],
-        ).reset_index()
-
-        cost_ratio_melted = pd.melt(
-            cost_ratio_pivot,
-            id_vars=["situacao_habitacional"],
-            var_name="Rácio Custo/Rendimento",
-            value_name="Contagem",
-        )
-
-        fig = px.bar(
-            cost_ratio_melted,
-            x="situacao_habitacional",
-            y="Contagem",
-            color="Rácio Custo/Rendimento",
-            title="Rácio Custo Habitacional/Rendimento por Situação",
-            labels={
-                "situacao_habitacional": "Situação Habitacional",
-                "Contagem": "Número de Inquiridos",
-            },
-            color_discrete_sequence=COLOR_SCALES["sequential"],
-        )
-        fig.update_layout(
-            plot_bgcolor=BACKGROUND_COLORS[0],
-            paper_bgcolor=BACKGROUND_COLORS[3],
-            font_color=TEXT_COLORS[2],
-            title_font_color=TEXT_COLORS[0],
-        )
-        st.plotly_chart(fig)
+    # Gráfico de caixa de rendimento por situação habitacional
+    fig = px.box(
+        df_pt,
+        x="situacao_habitacional",
+        y="rendimento_numerical",
+        color="situacao_habitacional",
+        color_discrete_map={
+            "Arrendamento": HOUSING_COLORS["Arrendamento"],
+            "Casa Própria": HOUSING_COLORS["Casa Própria"],
+            "Outro": HOUSING_COLORS["Others"],
+        },
+        title="Distribuição de Rendimento por Situação Habitacional",
+        labels={
+            "situacao_habitacional": "Situação Habitacional",
+            "rendimento_numerical": "Rendimento Anual (€)",
+        },
+    )
+    fig.update_layout(
+        plot_bgcolor=BACKGROUND_COLORS[0],
+        paper_bgcolor=BACKGROUND_COLORS[3],
+        font_color=TEXT_COLORS[2],
+        title_font_color=TEXT_COLORS[0],
+    )
+    st.plotly_chart(fig)
 
     # Tendências de acessibilidade de renda ao longo do tempo
     st.subheader("Tendências de Acessibilidade de Renda")
@@ -351,7 +264,7 @@ def show_income_housing_costs_tab(df):
 
     with col1:
         # Extrair ano da data de início do arrendamento
-        rent_time_data = df[df["housing_situation"] == "Renting"].copy()
+        rent_time_data = df[df["housing_situation"] == "Arrendamento"].copy()
         rent_time_data["rental_year"] = (
             rent_time_data["ano-inicio-arrendamento"].astype(float).astype("Int64")
         )
@@ -433,7 +346,7 @@ def show_income_housing_costs_tab(df):
     O calculador utiliza a regra dos 30%: os custos habitacionais não devem exceder 30% do rendimento mensal bruto.
     """)
 
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2, col3 = st.columns([4, 6, 6])
 
     with col1:
         income_input = st.number_input(
@@ -470,7 +383,7 @@ def show_income_housing_costs_tab(df):
     with col1:
         # Renda média por distrito
         district_rent = (
-            df[df["housing_situation"] == "Renting"]
+            df[df["housing_situation"] == "Arrendamento"]
             .groupby("distrito")["valor-mensal-renda"]
             .mean()
             .reset_index()

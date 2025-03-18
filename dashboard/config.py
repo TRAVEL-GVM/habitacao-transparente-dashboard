@@ -46,9 +46,9 @@ SATISFACTION_COLORS = {
 
 # Housing Situation Colors (Using primary and accent colors)
 HOUSING_COLORS = {
-    "Renting": PRIMARY_COLORS[0],  # Dark green
-    "Owned": SECONDARY_COLORS[0],  # Alternative green
-    "Living with others": ACCENT_COLORS[0],  # Lime green
+    "Arrendamento": PRIMARY_COLORS[0],  # Dark green
+    "Casa Própria": SECONDARY_COLORS[0],  # Alternative green
+    "Others": ACCENT_COLORS[0],  # Lime green
 }
 
 # Rent Burden Colors (Using a green to red gradient)

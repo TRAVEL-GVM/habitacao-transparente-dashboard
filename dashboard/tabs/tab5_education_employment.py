@@ -77,7 +77,7 @@ def show_education_employment_tab(df):
         )
     
     # SECÇÃO 1: EDUCAÇÃO E SITUAÇÃO HABITACIONAL
-    st.subheader("1. Níveis Educacionais e Situação Habitacional")
+    st.subheader("Níveis Educacionais e Situação Habitacional")
     
     st.markdown("""
     Esta secção analisa como os diferentes níveis educacionais se relacionam com as situações habitacionais em Portugal,
@@ -89,7 +89,6 @@ def show_education_employment_tab(df):
     
     with col1:
         # Distribuição educacional por situação habitacional
-        st.markdown("### Situação Habitacional por Nível Educacional")
         
         # Filtrar linhas com valores em falta
         filtered_df = df.dropna(subset=['education_level', 'housing_situation'])
@@ -106,9 +105,9 @@ def show_education_employment_tab(df):
         
         # Traduzir situações habitacionais
         housing_mapping = {
-            'Renting': 'Arrendamento',
-            'Owned': 'Propriedade',
-            'Living with others': 'A viver com outros'
+            'Arrendamento': 'Arrendamento',
+            'Casa Própria': 'Propriedade',
+            'Others': 'A viver com outros'
         }
         
         # Aplicar mapeamento
@@ -142,9 +141,9 @@ def show_education_employment_tab(df):
                 'education_level_pt': ['Básico', 'Secundário', 'Profissional', 'Licenciatura', 'Mestrado', 'Doutoramento']
             },
             color_discrete_map={
-                'Arrendamento': HOUSING_COLORS['Renting'],
-                'Propriedade': HOUSING_COLORS['Owned'], 
-                'A viver com outros': HOUSING_COLORS['Living with others']
+                'Arrendamento': HOUSING_COLORS['Arrendamento'],
+                'Propriedade': HOUSING_COLORS['Casa Própria'], 
+                'A viver com outros': HOUSING_COLORS['Others']
             }
         )
         fig.update_layout(
@@ -164,8 +163,7 @@ def show_education_employment_tab(df):
     
     with col2:
         # Rendimento médio por nível educacional
-        st.markdown("### Rendimento Médio por Nível Educacional")
-        
+
         # Filtrar linhas com valores em falta
         filtered_df = df.dropna(subset=['education_level', 'rendimento_numerical'])
         filtered_df['education_level_pt'] = filtered_df['education_level'].map(education_mapping)
@@ -211,7 +209,7 @@ def show_education_employment_tab(df):
         """)
     
     # SECÇÃO 2: SITUAÇÃO PROFISSIONAL E HABITAÇÃO
-    st.subheader("2. Situação Profissional e Condições Habitacionais")
+    st.subheader("Situação Profissional e Condições Habitacionais")
     
     st.markdown("""
     Esta secção examina a relação entre a situação profissional e as condições habitacionais,
@@ -223,8 +221,7 @@ def show_education_employment_tab(df):
     
     with col1:
         # Situação profissional por situação habitacional
-        st.markdown("### Situação Habitacional por Situação Profissional")
-        
+
         # Filtrar linhas com valores em falta
         filtered_df = df.dropna(subset=['employment_status', 'housing_situation'])
         
@@ -240,9 +237,9 @@ def show_education_employment_tab(df):
         
         # Traduzir situações habitacionais (necessário neste escopo também)
         housing_mapping = {
-            'Renting': 'Arrendamento',
-            'Owned': 'Propriedade',
-            'Living with others': 'A viver com outros'
+            'Arrendamento': 'Arrendamento',
+            'Casa Própria': 'Propriedade',
+            'Others': 'A viver com outros'
         }
         
         # Aplicar mapeamentos
@@ -276,9 +273,9 @@ def show_education_employment_tab(df):
                 'employment_status_pt': ['Tempo Inteiro', 'Tempo Parcial', 'Trabalhador Independente', 'Desempregado', 'Estudante', 'Reformado']
             },
             color_discrete_map={
-                'Arrendamento': HOUSING_COLORS['Renting'],
-                'Propriedade': HOUSING_COLORS['Owned'], 
-                'A viver com outros': HOUSING_COLORS['Living with others']
+                'Arrendamento': HOUSING_COLORS['Arrendamento'],
+                'Propriedade': HOUSING_COLORS['Casa Própria'], 
+                'A viver com outros': HOUSING_COLORS['Others']
             }
         )
         fig.update_layout(
@@ -298,10 +295,8 @@ def show_education_employment_tab(df):
     
     with col2:
         # Sobrecarga de renda por situação profissional
-        st.markdown("### Sobrecarga de Renda por Situação Profissional")
-        
         # Filtrar apenas para arrendatários e linhas com dados válidos
-        renters_df = df[df['housing_situation'] == 'Renting'].dropna(subset=['employment_status', 'rent_burden'])
+        renters_df = df[df['housing_situation'] == 'Arrendamento'].dropna(subset=['employment_status', 'rent_burden'])
         renters_df['employment_status_pt'] = renters_df['employment_status'].map(employment_mapping)
         
         # Traduzir categorias de sobrecarga de renda
@@ -366,7 +361,7 @@ def show_education_employment_tab(df):
         """)
     
     # SECÇÃO 3: SATISFAÇÃO HABITACIONAL
-    st.subheader("3. Satisfação Habitacional por Educação e Emprego")
+    st.subheader("Satisfação Habitacional por Educação e Emprego")
     
     st.markdown("""
     Esta secção analisa os níveis de satisfação habitacional entre diferentes grupos educacionais e profissionais,
@@ -378,7 +373,6 @@ def show_education_employment_tab(df):
     
     with col1:
         # Satisfação habitacional por nível educacional
-        st.markdown("### Satisfação Habitacional por Nível Educacional")
         
         filtered_df = df.dropna(subset=['education_level', 'satisfaction_level'])
         filtered_df['education_level_pt'] = filtered_df['education_level'].map(education_mapping)
@@ -434,7 +428,6 @@ def show_education_employment_tab(df):
     
     with col2:
         # Satisfação habitacional por situação profissional
-        st.markdown("### Satisfação Habitacional por Situação Profissional")
         
         filtered_df = df.dropna(subset=['employment_status', 'satisfaction_level'])
         filtered_df['employment_status_pt'] = filtered_df['employment_status'].map(employment_mapping)
@@ -481,7 +474,7 @@ def show_education_employment_tab(df):
     """)
     
     # SECÇÃO 4: RAZÕES DE INSATISFAÇÃO
-    st.subheader("4. Razões de Insatisfação Habitacional por Nível Educacional")
+    st.subheader("Razões de Insatisfação Habitacional por Nível Educacional")
     
     st.markdown("""
     Esta secção analisa as principais razões de insatisfação habitacional entre diferentes grupos educacionais,

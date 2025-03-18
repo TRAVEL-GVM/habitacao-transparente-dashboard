@@ -312,9 +312,9 @@ def show_satisfaction_levels_tab(df):
 
             # Create a mapping for housing situation labels
             housing_situation_pt = {
-                "Renting": "Arrendamento",
-                "Owned": "Propriedade",
-                "Living with others": "A viver com outros"
+                "Arrendamento": "Arrendamento",
+                "Casa Própria": "Casa Própria",
+                "Others": "Outros"
             }
             
             # Create a new copy with Portuguese housing situation labels for visualization
@@ -388,10 +388,10 @@ def show_satisfaction_levels_tab(df):
             ownership_by_income = {}
             for group, data in income_groups.items():
                 if not data.empty:
-                    owned = data[data["housing_situation"] == "Owned"][
+                    owned = data[data["housing_situation"] == "Casa Própria"][
                         "satisfaction_score"
                     ].mean()
-                    rented = data[data["housing_situation"] == "Renting"][
+                    rented = data[data["housing_situation"] == "Arrendamento"][
                         "satisfaction_score"
                     ].mean()
                     ownership_by_income[group] = (owned, rented)
@@ -500,7 +500,6 @@ def show_satisfaction_levels_tab(df):
                     ["Very Satisfied", "Satisfied"]
                 )
             ].sum()
-            * 100
         )
         dissatisfied_pct = (
             satisfaction_counts[
@@ -508,7 +507,6 @@ def show_satisfaction_levels_tab(df):
                     ["Dissatisfied", "Very Dissatisfied"]
                 )
             ].sum()
-            * 100
         )
 
         st.metric("Taxa de Satisfação Geral", f"{satisfied_pct:.1f}%")
@@ -563,7 +561,6 @@ def show_satisfaction_levels_tab(df):
         title="Razões para Insatisfação Habitacional",
     )
     fig.update_layout(
-        plot_bgcolor=BACKGROUND_COLORS[0],
         paper_bgcolor=BACKGROUND_COLORS[3],
         font_color=TEXT_COLORS[2],
         title_font_color=TEXT_COLORS[0],
@@ -574,7 +571,7 @@ def show_satisfaction_levels_tab(df):
     top_reasons = reason_df.head(3)["Razão"].tolist()
     st.markdown(f"""
     **Conclusões Principais:**
-    - As três principais razões para insatisfação são: {", ".join(top_reasons)}
+    - As três principais razões para insatisfação são: **{", ".join(top_reasons)}**
     - Preocupações financeiras (sobrecarga de custos e dificuldades financeiras) são fatores proeminentes na insatisfação habitacional
     - Problemas de localização (distância do trabalho/serviços e transportes) afetam significativamente a satisfação
     - A qualidade da habitação e as limitações de espaço também desempenham papéis importantes na insatisfação
@@ -658,7 +655,7 @@ def show_satisfaction_levels_tab(df):
     A sobrecarga de renda é um indicador crítico da acessibilidade habitacional e pode afetar significativamente a qualidade de vida.
     """)
 
-    renters_df = filtered_df[filtered_df["housing_situation"] == "Renting"]
+    renters_df = filtered_df[filtered_df["housing_situation"] == "Arrendamento"]
     if not renters_df.empty:
         rent_satisfaction = pd.crosstab(
             renters_df["rent_burden"], renters_df["satisfaction_level"]
